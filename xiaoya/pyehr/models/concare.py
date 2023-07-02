@@ -673,22 +673,3 @@ class ConCare(nn.Module):
         decov_loss /= time_steps
         out = self.dropout(out)
         return out, decov_loss
-
-
-if __name__ == "__main__":
-    bs = 3
-    max_len = 13
-    lab_dim = 73
-    demo_dim = 2
-    hidden_dim = 128
-    lab = torch.randn([bs, max_len, lab_dim])
-    static = torch.randn([bs, demo_dim])
-    lens = torch.tensor([max_len, 2, 9])
-    mask = generate_mask(lens)
-    model = ConCare(lab_dim, demo_dim, hidden_dim, 4, 325, 0.5)
-    out, decov_loss  = model(lab, static, mask)
-    print(out.shape)
-    # x = torch.randn(2, 13, 75)
-    # lens = torch.tensor([13,2])
-    # x_lab, x_demo, mask = x[:, 0, :2], x[:, :, 2:], generate_mask(lens)
-    # print(x_lab.shape, x_demo.shape, mask.shape)
