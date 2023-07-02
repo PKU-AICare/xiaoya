@@ -11,5 +11,5 @@ from .retain import RETAIN
 from .rnn import RNN
 from .stagenet import StageNet
 from .tcn import TCN
-from .tgru import TGRU
+from .mhagru import MHAGRU
 from .transformer import Transformer
