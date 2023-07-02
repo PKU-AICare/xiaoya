@@ -31,6 +31,7 @@ class Pipeline:
                 - los
 
     """
+
     def __init__(self,
                 dataset: pd.DataFrame,
                 model: str = 'GRU',
@@ -44,6 +45,8 @@ class Pipeline:
                 use_pretrain_model: bool = False,
                 data_path: str = Path('./datasets'),
                 ckpt_path: str = Path('./checkpoints'),
+                demographic_dim: int = 2,
+                labtest_dim: int = 73
             ) -> None:
         
         self.dataset = pd.DataFrame(dataset)
@@ -59,8 +62,8 @@ class Pipeline:
             'seed': seed,
             'use_pretrain_model': use_pretrain_model,
 
-            'demo_dim': 2,
-            'lab_dim': 0,
+            'demo_dim': demographic_dim,
+            'lab_dim': labtest_dim,
         }
         self.data_path = data_path
         self.ckpt_path = ckpt_path
