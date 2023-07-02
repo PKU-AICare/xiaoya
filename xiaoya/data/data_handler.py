@@ -22,10 +22,11 @@ class DataHandler:
     Import user uploaded data, merge data tables, stats...
 
     Args:
-    labtest_data: pd.DataFrame
-    events_data: pd.DataFrame
-    target_data: pd.DataFrame
-    data_path: path to save processed data, default: './datasets'
+        labtest_data: DataFrame.
+        events_data: DataFrame.
+        target_data: DataFrame.
+        data_path: str.
+            path to save processed data, default: './datasets'.
 
     """
 
@@ -95,6 +96,10 @@ class DataHandler:
         test: int = 20,
         seed: int = 42,
     ) -> None:
+        """
+        
+        """
+        
         data_path = self.data_path
         demographic_features = self.events_features
         labtest_features = self.labtest_features
