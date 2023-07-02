@@ -28,6 +28,14 @@ class FileHandler:
         self.labtest_df = pd.DataFrame(labtest_data)
         self.events_df = pd.DataFrame(events_data)
         self.target_df = pd.DataFrame(target_data)
+        self.labtest_standard_df = to_dataframe(self.labtest_df, 1)
+        self.events_standard_df = to_dataframe(self.events_df, 2)
+        self.target_standard_df = to_dataframe(self.target_df, 3)
+        self.merged_df = merge_dfs(
+            self.labtest_standard_df,
+            self.events_standard_df,
+            self.target_standard_df
+        )
 
     def preview_features(self) -> Dict:
         feats = {}
@@ -40,16 +48,6 @@ class FileHandler:
             save_name = get_save_name(i)
             feats[save_name] = feat
         return feats
-    
-    def merge_tables(self) -> None:
-        self.labtest_standard_df = to_dataframe(self.labtest_df, 1)
-        self.events_standard_df = to_dataframe(self.events_df, 2)
-        self.target_standard_df = to_dataframe(self.target_df, 3)
-        self.merged_df = merge_dfs(
-            self.labtest_standard_df,
-            self.events_standard_df,
-            self.target_standard_df
-        )
 
     def analyse_data(self) -> List:
         len_df = len(self.merged_df.index)
