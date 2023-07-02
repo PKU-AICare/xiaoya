@@ -35,7 +35,7 @@ class DlPipeline(L.LightningModule):
             'ConCare': models.ConCare,
             'GRU': models.GRU,
             'LSTM': models.LSTM,
-            'TGRU': models.TGRU,
+            'MHAGRU': models.MHAGRU,
             'MLP': models.MLP,
             'RNN': models.RNN,
         }
@@ -86,7 +86,7 @@ class DlPipeline(L.LightningModule):
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding
-        elif self.model_name in ["TGRU"]:
+        elif self.model_name in ["MHAGRU"]:
             embedding, attn = self.ehr_encoder(x)
             embedding = embedding.to(x.device)
             self.embedding = embedding
