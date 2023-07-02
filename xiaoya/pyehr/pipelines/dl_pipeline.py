@@ -87,8 +87,7 @@ class DlPipeline(L.LightningModule):
             y_hat = self.head(embedding)
             return y_hat, embedding
         elif self.model_name in ["TGRU"]:
-            x_demo, x_lab = x[:, 0, :self.demo_dim], x[:, :, self.demo_dim:]
-            embedding, attn = self.ehr_encoder(x_lab, x_demo)
+            embedding, attn = self.ehr_encoder(x)
             embedding = embedding.to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
