@@ -11,3 +11,8 @@ xiaoya/ # root
     pipeline/ # model training and evaluation, ...
     analysis/ # analysis modules
 ```
+
+## TODOs
+
+- [ ] How to deal with the Age feature?
+- [ ] the testing scripts of pipeline.train()
