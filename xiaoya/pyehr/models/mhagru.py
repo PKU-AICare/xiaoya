@@ -10,11 +10,11 @@ class MHAGRU(nn.Module):
         self.feat_dim = feat_dim
         self.num_heads = 4
         self.act = act_layer()
-        self.input_proj = nn.Linear(input_dim, hidden_dim)
+        self.input_proj = nn.Linear(input_dim, input_dim)
         self.grus = nn.ModuleList(
             [
                 nn.GRU(1, feat_dim, num_layers=1, batch_first=True)
-                for _ in range(input_dim )
+                for _ in range(input_dim)
             ]
         )
         self.mha = nn.MultiheadAttention(feat_dim, self.num_heads, dropout=drop, batch_first=True)
