@@ -2,11 +2,11 @@ import lightning as L
 import torch
 import torch.nn as nn
 
-import models
-from dataloaders.utils import unpad_y
-from losses import get_simple_loss
-from metrics import get_all_metrics, check_metric_is_better
-from models.utils import generate_mask
+from xiaoya.pyehr import models
+from xiaoya.pyehr.dataloaders.utils import unpad_y
+from xiaoya.pyehr.losses import get_simple_loss
+from xiaoya.pyehr.metrics import get_all_metrics, check_metric_is_better
+from xiaoya.pyehr.models.utils import generate_mask
 
 
 class DlPipeline(L.LightningModule):
@@ -15,7 +15,7 @@ class DlPipeline(L.LightningModule):
         self.save_hyperparameters()
         self.demo_dim = config["demo_dim"] if "demo_dim" in config else 0
         self.lab_dim = config["lab_dim"] if "lab_dim" in config else 0
-        self.input_dim = self.demo_dim + self.lab_dim
+        self.input_dim = self.demo_dim + self.lab_dim + 1
         config["input_dim"] = self.input_dim
         self.hidden_dim = config["hidden_dim"] if "hidden_dim" in config else 32
         self.output_dim = config["output_dim"] if "output_dim" in config else 1
@@ -30,17 +30,8 @@ class DlPipeline(L.LightningModule):
         if self.model_name == "StageNet":
             config["chunk_size"] = self.hidden_dim
 
-        model_class_dict = {
-            'AdaCare': models.AdaCare,
-            'ConCare': models.ConCare,
-            'GRU': models.GRU,
-            'LSTM': models.LSTM,
-            'MHAGRU': models.MHAGRU,
-            'MLP': models.MLP,
-            'RNN': models.RNN,
-        }
 
-        model_class = model_class_dict[self.model_name]
+        model_class = getattr(models, self.model_name)
         self.ehr_encoder = model_class(**config)
         if self.task == "outcome":
             self.head = nn.Sequential(nn.Linear(self.hidden_dim, self.output_dim), nn.Dropout(0.0), nn.Sigmoid())
@@ -137,7 +128,7 @@ class DlPipeline(L.LightningModule):
     def test_step(self, batch, batch_idx):
         x, y, lens, pid = batch
         loss, y, y_hat = self._get_loss(x, y, lens)
-        outs = {'y_pred': y_hat, 'y_true': y}
+        outs = {'y_pred': y_hat, 'y_true': y, 'lens': lens}
         self.test_step_outputs.append(outs)
         return loss
     
