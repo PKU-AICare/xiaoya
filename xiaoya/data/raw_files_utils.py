@@ -1,9 +1,10 @@
 import os
+from typing import List
 
 import pandas as pd
 
 
-def get_features(df, table: int):
+def get_features(df, table: int) -> List:
     """
     df: DataFrame.
     table: 1, 2, 3.
@@ -17,7 +18,7 @@ def get_features(df, table: int):
         feats.remove('RecordTime')
     return feats
 
-def to_dataframe(df: pd.DataFrame, table: int):
+def to_dataframe(df: pd.DataFrame, table: int) -> pd.DataFrame:
     """
     将读入的文件转换为标准格式，方便后续合并
     """
@@ -41,7 +42,7 @@ def to_dataframe(df: pd.DataFrame, table: int):
     df.sort_values(by=['PatientID', 'RecordTime'], inplace=True)
     return df
 
-def merge_dfs(df_labtest, df_events=None, df_target=None):
+def merge_dfs(df_labtest, df_events=None, df_target=None) -> pd.DataFrame:
     """
     将多个DataFrame合并为一个
     """
