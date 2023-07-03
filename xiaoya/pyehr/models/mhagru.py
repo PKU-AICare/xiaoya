@@ -32,8 +32,8 @@ class MHAGRU(nn.Module):
             cur_feat = gru(cur_feat)[0]             # [bs, time_steps, feat_dim]
             out[:, :, i] = cur_feat                 # [bs, time_steps, input_dim, feat_dim]
             
-            attn = self.mha(cur_feat, cur_feat, cur_feat, average_attn_weights=True)
-            attention[:, :, i] = attn[0]
+            attn_feat = self.mha(cur_feat, cur_feat, cur_feat)[0]
+            attention[:, :, i] = attn_feat
 
         out = out.flatten(2)        # [bs, time, input, feat] -> [bs, time, input * feat]
         out = self.out_proj(out)    # [bs, time, input * feat] -> [bs, time, hidden_dim]
