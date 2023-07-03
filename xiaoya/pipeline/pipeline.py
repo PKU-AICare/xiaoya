@@ -61,7 +61,7 @@ class Pipeline:
                 patience: int = 10,
                 task: str = 'multitask',
                 seed: int = 42,
-                pretrained_model_path: str = None,
+                pretrained_model_path: Path = None,
                 data_path: Path = Path('./datasets'),
                 ckpt_path: Path = Path('./checkpoints'),
                 demographic_dim: int = 2,
