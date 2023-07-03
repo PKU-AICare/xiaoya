@@ -7,9 +7,9 @@ import torch
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
 
-from pyehr.dataloaders import EhrDataModule
-from pyehr.pipelines import DlPipeline
-from pyehr.dataloaders.utils import get_los_info
+from xiaoya.pyehr.dataloaders import EhrDataModule
+from xiaoya.pyehr.pipelines import DlPipeline
+from xiaoya.pyehr.dataloaders.utils import get_los_info
 
 class Pipeline:
     """
@@ -17,19 +17,39 @@ class Pipeline:
 
     Args:
         model: str.
-            the model to use, Available model:
+            the model to use, available models:
                 - LSTM
                 - GRU
                 - AdaCare
                 - RNN
                 - MLP
-                - MHAGRU, for feature importance
         task: str. 
-            the task.
+            the task, available tasks:
                 - multitask
                 - outcome
                 - los
-
+        batch_size: int.
+            the batch size.
+        learning_rate: float.
+            the learning rate.
+        hidden_dim: int.
+            the hidden dimension.
+        epochs: int.
+            the number of epochs.
+        patience: int.
+            the patience for early stopping.
+        seed: int.
+            the random seed.
+        pretrain_model_path: str.
+            the path of the pretrained model.
+        data_path: str.
+            the path of the data.
+        ckpt_path: str.
+            the path to save the checkpoints.
+        demographic_dim: int.
+            the dimension of the demographic features.
+        labtest_dim: int.
+            the dimension of the labtest features.
     """
 
     def __init__(self,
@@ -42,7 +62,7 @@ class Pipeline:
                 patience: int = 10,
                 task: str = 'multitask',
                 seed: int = 42,
-                use_pretrain_model: bool = False,
+                pretrain_model_path: str = None,
                 data_path: str = Path('./datasets'),
                 ckpt_path: str = Path('./checkpoints'),
                 demographic_dim: int = 2,
@@ -60,7 +80,7 @@ class Pipeline:
             'patience': patience,
             'task': task,
             'seed': seed,
-            'use_pretrain_model': use_pretrain_model,
+            'pretrain_model_path': pretrain_model_path,
 
             'demo_dim': demographic_dim,
             'lab_dim': labtest_dim,
@@ -69,7 +89,14 @@ class Pipeline:
         self.ckpt_path = ckpt_path
         self.los_info = get_los_info(data_path)
 
-    def train(self):
+    def train(self) -> str:
+        """
+        Train the model.
+
+        Returns:
+            str: the path of the best model.
+        """
+
         main_metric = 'auprc' if self.config['task'] in ['outcome', 'multitask'] else 'mae'
         mode = 'max' if self.config['task'] in ['outcome', 'multitask'] else 'min'
 
@@ -96,9 +123,20 @@ class Pipeline:
                             callbacks=[early_stopping_callback, checkpoint_callback], logger=False,
                             enable_progress_bar=True)
         trainer.fit(pipeline, datamodule=dm)
-        self.ckpt_best_url = checkpoint_callback.best_model_path
+        return checkpoint_callback.best_model_path
 
-    def predict(self):
+    def predict(self, model_path: str):
+        """
+        Use the best model to predict.
+
+        Args:
+            model_path: str.
+                the path of the best model.
+
+        Returns:
+            dict: the performance of the model.
+        """
+
         self.config.update({'los_info': self.los_info})
 
         # data
@@ -110,21 +148,19 @@ class Pipeline:
         # train/val/test
         pipeline = DlPipeline(self.config)
         trainer = L.Trainer(accelerator=accelerator, max_epochs=1, logger=False, num_sanity_val_steps=0)
-        trainer.test(pipeline, datamodule=dm, ckpt_path=self.ckpt_best_url)
+        trainer.test(pipeline, datamodule=dm, ckpt_path=model_path)
 
-        # perf = pipeline.test_performance
-        self.test_performance = pipeline.test_performance
+        return pipeline.test_performance
 
-    def feature_importance(self):
-        self.config.update({'los_info': self.los_info, 'model': 'MHAGRU'})
+    def execute(self):
+        """
+        Execute the pipeline.
 
-        # data
-        dm = EhrDataModule(self.data_path, batch_size=self.config['batch_size'])
+        Returns:
+            dict: the performance of the model.
+        """
 
-        # device
-        accelerator = 'gpu' if torch.cuda.is_available() else 'cpu'
-    
-        # train/val/test
-        pipeline = DlPipeline(self.config)
-        trainer = L.Trainer(accelerator=accelerator, max_epochs=1, logger=False, num_sanity_val_steps=0)
-        trainer.test(pipeline, datamodule=dm, ckpt_path=self.ckpt_best_url)
+        model_path = self.config['pretrain_model_path']
+        if model_path is None:
+            model_path = self.train()
+        return self.predict(model_path)
