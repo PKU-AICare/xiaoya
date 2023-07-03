@@ -61,7 +61,7 @@ class DataHandler:
         self.target_features = feats['target_features']
         return feats
 
-    def analyse_data(self) -> List:
+    def analyze_dataset(self) -> List:
         len_df = len(self.merged_df.index)
         header = [
             {"key": "name", "value": "name"},
@@ -90,7 +90,7 @@ class DataHandler:
             statistic_info.append(h)
         return statistic_info
     
-    def split_datasets(self,
+    def execute(self,
         train: int = 70,
         val: int = 10,
         test: int = 20,
