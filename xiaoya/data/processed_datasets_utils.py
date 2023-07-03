@@ -132,95 +132,9 @@ def normalize_df_with_statatistics(df, normalize_features, train_mean, train_std
     return df
 
 
-def split_datasets(src_root: str, 
-                   dst_root: str, 
-                   src_filename: str='merged.csv',
-                   train: int=70,
-                   val: int=10,
-                   test: int=20,):
-    # calibration
-    calib = 5
-    seed = 42
-    # labtest_features = ['Hypersensitive cardiac troponinI', 'hemoglobin', 'Serum chloride', 'Prothrombin time', 'procalcitonin', 'eosinophils(%)', 'Interleukin 2 receptor', 'Alkaline phosphatase', 'albumin', 'basophil(%)', 'Interleukin 10', 'Total bilirubin', 'Platelet count', 'monocytes(%)', 'antithrombin', 'Interleukin 8', 'indirect bilirubin', 'Red blood cell distribution width ', 'neutrophils(%)', 'total protein', 'Quantification of Treponema pallidum antibodies', 'Prothrombin activity', 'HBsAg', 'mean corpuscular volume', 'hematocrit', 'White blood cell count', 'Tumor necrosis factorα', 'mean corpuscular hemoglobin concentration', 'fibrinogen', 'Interleukin 1β', 'Urea', 'lymphocyte count', 'PH value', 'Red blood cell count', 'Eosinophil count', 'Corrected calcium', 'Serum potassium', 'glucose', 'neutrophils count', 'Direct bilirubin', 'Mean platelet volume', 'ferritin', 'RBC distribution width SD', 'Thrombin time', '(%)lymphocyte', 'HCV antibody quantification', 'D-D dimer', 'Total cholesterol', 'aspartate aminotransferase', 'Uric acid', 'HCO3-', 'calcium', 'Amino-terminal brain natriuretic peptide precursor(NT-proBNP)', 'Lactate dehydrogenase', 'platelet large cell ratio ', 'Interleukin 6', 'Fibrin degradation products', 'monocytes count', 'PLT distribution width', 'globulin', 'γ-glutamyl transpeptidase', 'International standard ratio', 'basophil count(#)', 'mean corpuscular hemoglobin ', 'Activation of partial thromboplastin time', 'Hypersensitive c-reactive protein', 'HIV antibody quantification', 'serum sodium', 'thrombocytocrit', 'ESR', 'glutamic-pyruvic transaminase', 'eGFR', 'creatinine']
+def one_hot_encoder(arr: np.ndarray) -> np.ndarray:
+    arr = np.asarray(arr)
+    n_values = np.max(arr) + 1
 
-    # Read data from file
-    df = pd.read_csv(os.path.join(src_root, src_filename))
-    demographic_features = ['Sex', 'Age']
-    labtest_features = df.columns.tolist()[6:]
-
-    # Group the dataframe by patient ID
-    grouped = df.groupby('PatientID')
-    patients = np.array(list(grouped.groups.keys()))
-    
-    # Get the train_val/test patient IDs
-    patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
-    train_val_patients, test_patients = train_test_split(patients, test_size=test/(train+val+test), random_state=seed, stratify=patients_outcome)
-
-    # Get the train/val patient IDs
-    train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
-    train_patients, val_patients = train_test_split(train_val_patients, test_size=val/(train+val), random_state=seed, stratify=train_val_patients_outcome)
-
-    # Get the traincal and calib patient IDs (for calibration required methods)
-    # train_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_patients])
-    # traincal_patients, calib_patients = train_test_split(train_patients, test_size=calib/train, random_state=seed, stratify=train_patients_outcome)
-
-    # assert that traincal_patients and calib_patients are disjoint
-    # assert len(set(traincal_patients).intersection(set(calib_patients))) == 0
-
-    # assert that traincal_patients + cal patients = train_patients. Both lengths should be equal and the union should be equal to the train_patients
-    # assert sorted(set(traincal_patients).union(set(calib_patients))) == sorted(train_patients)
-    # assert len(traincal_patients) + len(calib_patients) == len(train_patients)
-
-    #  Create train, val, test, [traincal, calib] dataframes for the current fold
-    train_df = df[df['PatientID'].isin(train_patients)]
-    val_df = df[df['PatientID'].isin(val_patients)]
-    test_df = df[df['PatientID'].isin(test_patients)]
-    # traincal_df = df[df['PatientID'].isin(traincal_patients)]
-    # calib_df = df[df['PatientID'].isin(calib_patients)]
-
-    # Save the train, val, and test dataframes for the current fold to csv files
-    
-    Path(dst_root).mkdir(parents=True, exist_ok=True)
-    train_df.to_csv(os.path.join(dst_root, "train_raw.csv"), index=False)
-    val_df.to_csv(os.path.join(dst_root, "val_raw.csv"), index=False)
-    test_df.to_csv(os.path.join(dst_root, "test_raw.csv"), index=False)
-    # traincal_df.to_csv(os.path.join(dst_root, "traincal_raw.csv"), index=False)
-    # calib_df.to_csv(os.path.join(dst_root, "calib_raw.csv"), index=False)
-
-    # Calculate the mean and std of the train set (include age, lab test features, and LOS) on the data in 5% to 95% quantile range
-    normalize_features = ['Age'] + labtest_features + ['LOS']
-    train_df, val_df, test_df, default_fill, los_info, train_mean, train_std = normalize_dataframe(train_df, val_df, test_df, normalize_features)
-    # traincal_df =  normalize_df_with_statatistics(traincal_df, normalize_features, train_mean, train_std)
-    # calib_df =  normalize_df_with_statatistics(calib_df, normalize_features, train_mean, train_std)
-    
-    """
-    Notice: we do not need the following code to filter outliers since some of the `outliers` are actually the real values.
-    """
-    
-    # Drop rows if all features are recorded NaN
-    train_df = train_df.dropna(axis=0, how='all', subset=normalize_features)
-    val_df = val_df.dropna(axis=0, how='all', subset=normalize_features)
-    test_df = test_df.dropna(axis=0, how='all', subset=normalize_features)
-
-    train_df.to_csv(os.path.join(dst_root, "train_after_zscore.csv"), index=False)
-    val_df.to_csv(os.path.join(dst_root, "val_after_zscore.csv"), index=False)
-    test_df.to_csv(os.path.join(dst_root, "test_after_zscore.csv"), index=False)
-
-    # Forward Imputation after grouped by PatientID
-    # Notice: if a patient has never done certain lab test, the imputed value will be the median value calculated from train set
-    train_x, train_y, train_pid = forward_fill_pipeline(train_df, default_fill, demographic_features, labtest_features)
-    val_x, val_y, val_pid = forward_fill_pipeline(val_df, default_fill, demographic_features, labtest_features)
-    test_x, test_y, test_pid = forward_fill_pipeline(test_df, default_fill, demographic_features, labtest_features)
-
-    # Save the imputed dataset to pickle file
-    pd.to_pickle(train_x, os.path.join(dst_root, "train_x.pkl"))
-    pd.to_pickle(train_y, os.path.join(dst_root, "train_y.pkl"))
-    pd.to_pickle(train_pid, os.path.join(dst_root, "train_pid.pkl"))
-    pd.to_pickle(val_x, os.path.join(dst_root, "val_x.pkl"))
-    pd.to_pickle(val_y, os.path.join(dst_root, "val_y.pkl"))
-    pd.to_pickle(val_pid, os.path.join(dst_root, "val_pid.pkl"))
-    pd.to_pickle(test_x, os.path.join(dst_root, "test_x.pkl"))
-    pd.to_pickle(test_y, os.path.join(dst_root, "test_y.pkl"))
-    pd.to_pickle(test_pid, os.path.join(dst_root, "test_pid.pkl"))
-    pd.to_pickle(los_info, os.path.join(dst_root, "los_info.pkl"))
+    return np.eye(n_values)[arr]
 
