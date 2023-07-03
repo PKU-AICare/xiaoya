@@ -3,52 +3,6 @@ import os
 import pandas as pd
 
 
-def delete_folder(root: str):
-    """
-    root: Path to delete.
-    """
-    if os.path.exists(root):
-        for root, dirs, files in os.walk(root, topdown=False):
-            for name in files:
-                os.remove(os.path.join(root, name))
-            for name in dirs:
-                os.rmdir(os.path.join(root, name))
-        os.rmdir(root)
-
-def read_file(file, filename: str):
-    """
-    file: Uploaded file in request.FILES.
-    """
-    suffix = filename.split('.')[-1]
-    if suffix == 'csv':
-        return pd.read_csv(file)
-    elif suffix == 'xlsx' or suffix == 'xls':
-        return pd.read_excel(file)
-    else:
-        return None
-    
-def save_csv(df: pd.DataFrame, root: str, filename: str, **kwargs):
-    """
-    root: Path to save file.
-    df: DataFrame to save.
-    filename: Name of file.
-    """
-    if not os.path.exists(root):
-        os.makedirs(root)
-    
-    df.to_csv(os.path.join(root, filename), **kwargs)
-
-def get_save_name(type: int):
-    """
-    type: 1, 2, 3.
-    """
-    names = {
-        1: 'labtest.csv',
-        2: 'events.csv',
-        3: 'target.csv'
-    }
-    return names[type]
-
 def get_features(df, table: int):
     """
     df: DataFrame.
