@@ -40,7 +40,7 @@ class Pipeline:
             the patience for early stopping.
         seed: int.
             the random seed.
-        pretrain_model_path: str.
+        pretrained_model_path: str.
             the path of the pretrained model.
         data_path: str.
             the path of the data.
@@ -61,9 +61,9 @@ class Pipeline:
                 patience: int = 10,
                 task: str = 'multitask',
                 seed: int = 42,
-                pretrain_model_path: str = None,
-                data_path: str = Path('./datasets'),
-                ckpt_path: str = Path('./checkpoints'),
+                pretrained_model_path: str = None,
+                data_path: Path = Path('./datasets'),
+                ckpt_path: Path = Path('./checkpoints'),
                 demographic_dim: int = 2,
                 labtest_dim: int = 73
             ) -> None:
@@ -78,7 +78,7 @@ class Pipeline:
             'patience': patience,
             'task': task,
             'seed': seed,
-            'pretrain_model_path': pretrain_model_path,
+            'pretrained_model_path': pretrained_model_path,
 
             'demo_dim': demographic_dim,
             'lab_dim': labtest_dim,
@@ -158,7 +158,7 @@ class Pipeline:
             dict: the performance of the model.
         """
 
-        model_path = self.config['pretrain_model_path']
+        model_path = self.config['pretrained_model_path']
         if model_path is None:
             model_path = self.train()
         return self.predict(model_path)
