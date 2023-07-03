@@ -85,16 +85,6 @@ class DataHandler:
         """
         
         len_df = len(self.merged_df.index)
-        header = [
-            {"key": "name", "value": "name"},
-            {"key": "count", "value": "count"},
-            {"key": "missing", "value": "missing"},
-            {"key": "min", "value": "min"},
-            {"key": "max", "value": "max"},
-            {"key": "mean", "value": "mean"},
-            {"key": "std", "value": "std"},
-            {"key": "median", "value": "median"},
-        ]
         statistic_info = []
         for idx, e in enumerate(self.merged_df.columns):
             if idx == 1:
