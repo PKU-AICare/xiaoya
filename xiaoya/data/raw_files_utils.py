@@ -4,13 +4,13 @@ from typing import List
 import pandas as pd
 
 
-def get_features(df, table: int) -> List:
+def get_features(df, table_type: str) -> List:
     """
     df: DataFrame.
-    table: 1, 2, 3.
+    table_type: 'labtest' or 'events' or 'target'
     """
 
-    if table == 1 or table == 2:
+    if table_type in ['labtest', 'events']:
         feats = df['Name'].dropna().unique().tolist()
     else:
         feats = df.columns.tolist()
@@ -18,11 +18,11 @@ def get_features(df, table: int) -> List:
         feats.remove('RecordTime')
     return feats
 
-def to_dataframe(df: pd.DataFrame, table: int) -> pd.DataFrame:
+def to_dataframe(df: pd.DataFrame, table_type: str) -> pd.DataFrame:
     """
     将读入的文件转换为标准格式，方便后续合并
     """
-    if table == 3:
+    if table_type == 'target':
         df = df.drop_duplicates(subset=['PatientID', 'RecordTime'], keep='last')
     else:
         df = df.drop_duplicates(subset=['PatientID', 'RecordTime', 'Name'], keep='last')

@@ -44,9 +44,9 @@ class DataHandler:
         self.target_df = pd.DataFrame(target_data)
 
 
-        self.labtest_standard_df = to_dataframe(self.labtest_df, 1)
-        self.events_standard_df = to_dataframe(self.events_df, 2)
-        self.target_standard_df = to_dataframe(self.target_df, 3)
+        self.labtest_standard_df = to_dataframe(self.labtest_df, 'labtest')
+        self.events_standard_df = to_dataframe(self.events_df, 'events')
+        self.target_standard_df = to_dataframe(self.target_df, 'target')
         self.merged_df = merge_dfs(
             self.labtest_standard_df,
             self.events_standard_df,
@@ -70,9 +70,9 @@ class DataHandler:
         """
 
         feats = {}
-        feats['labtest_features'] = get_features(self.labtest_df, 1)
-        feats['events_features'] = get_features(self.events_df, 2)
-        feats['target_features'] = get_features(self.target_df, 3)
+        feats['labtest_features'] = get_features(self.labtest_df, 'labtest')
+        feats['events_features'] = get_features(self.events_df, 'events')
+        feats['target_features'] = get_features(self.target_df, 'target')
         return feats
 
     def analyze_dataset(self) -> List:
