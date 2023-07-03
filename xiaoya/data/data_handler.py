@@ -6,12 +6,12 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from raw_files_utils import (
+from .raw_files_utils import (
     get_features,
     to_dataframe,
     merge_dfs
 )
-from processed_datasets_utils import (
+from .processed_datasets_utils import (
     normalize_dataframe,
     forward_fill_pipeline,
 )

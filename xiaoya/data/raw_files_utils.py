@@ -2,9 +2,6 @@ import os
 
 import pandas as pd
 
-PROCESSED_ROOT = '' 
-DATASETS_ROOT = '' 
-CHECKPOINTS_ROOT = ''
 
 def delete_folder(root: str):
     """
@@ -71,40 +68,46 @@ def to_dataframe(df: pd.DataFrame, table: int):
     将读入的文件转换为标准格式，方便后续合并
     """
     if table == 3:
-        if str(df['Outcome'][0]).lower() in ['true', 'false']:
-            df['Outcome'].replace({False: 0, True: 1}, inplace=True)
-        return df
+        df = df.drop_duplicates(subset=['PatientID', 'RecordTime'], keep='last')
+    else:
+        df = df.drop_duplicates(subset=['PatientID', 'RecordTime', 'Name'], keep='last')
+        columns = ['PatientID', 'RecordTime'] + list(df['Name'].dropna().unique())
+        df_new = pd.DataFrame(data=None, columns=columns)
+        grouped = df.groupby(['PatientID', 'RecordTime'])
+        for i, group in enumerate(grouped):
+            patient_id, record_time = group[0]
+            df_group = group[1]
+            df_new.loc[i, 'PatientID'] = patient_id
+            df_new.loc[i, 'RecordTime'] = record_time
+            for _, row in df_group.iterrows():
+                df_new.loc[i, row['Name']] = row['Value']
+        df = df_new
 
-    new_dict = {}
-    new_dict['PatientID'] = df['PatientID']
-    new_dict['RecordTime'] = df['RecordTime']
-
-    for name in df['Name'].dropna().unique():
-        new_dict[name] = df[df['Name'] == name]['Value']
-    return pd.DataFrame(new_dict)
+    df['RecordTime'] = pd.to_datetime(df['RecordTime'], format='%Y-%m-%d')
+    df.sort_values(by=['PatientID', 'RecordTime'], inplace=True)
+    return df
 
 def merge_dfs(df_labtest, df_events=None, df_target=None):
     """
     将多个DataFrame合并为一个
     """
-    df = df_labtest
-    cols = df.columns.tolist()
-    cols.remove('Age')
-    df = df[['Age'] + cols]   
+    df = df_labtest 
 
     if df_events is not None:
-        df = pd.merge(df_events, df, how='outer', on=['PatientID', 'RecordTime'])
+        df = pd.merge(df, df_events, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
 
     if df_target is not None:
-        df = pd.merge(df_target, df, how='outer', on=['PatientID', 'RecordTime'])
+        df = pd.merge(df, df_target, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
     
+    # 前向填充events
+    for col in df_events.columns.tolist():
+        df[col] = df[col].fillna(method='ffill')
+
+    # 调整列的顺序
+    cols = ['PatientID', 'RecordTime', 'Outcome', 'LOS', 'Sex', 'Age']
+    all_cols = df.columns.tolist()
+    for col in cols:
+        all_cols.remove(col) if col in all_cols else None
+    all_cols = cols + all_cols
+    df = df[all_cols]
     return df
-
-def processed_root(username: str, job_name: str):
-    return os.path.join(PROCESSED_ROOT, username, job_name)
-
-def datasets_root(username: str, job_name: str):
-    return os.path.join(DATASETS_ROOT, username, job_name)
-
-def checkpoints_root(username: str, job_name: str):
-    return os.path.join(CHECKPOINTS_ROOT, username, job_name)
