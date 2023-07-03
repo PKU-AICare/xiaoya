@@ -53,7 +53,6 @@ class Pipeline:
     """
 
     def __init__(self,
-                dataset: pd.DataFrame,
                 model: str = 'GRU',
                 batch_size: int = 64,
                 learning_rate: float = 0.001,
@@ -69,7 +68,6 @@ class Pipeline:
                 labtest_dim: int = 73
             ) -> None:
         
-        self.dataset = pd.DataFrame(dataset)
         self.config = {
             'model': model,
             'batch_size': batch_size,
@@ -150,7 +148,7 @@ class Pipeline:
         trainer = L.Trainer(accelerator=accelerator, max_epochs=1, logger=False, num_sanity_val_steps=0)
         trainer.test(pipeline, datamodule=dm, ckpt_path=model_path)
 
-        return pipeline.test_performance
+        return pipeline.test_performance, pipeline.attn
 
     def execute(self):
         """
