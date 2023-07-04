@@ -87,6 +87,7 @@ class DataHandler:
         len_df = len(self.merged_df.index)
         statistic_info = []
         for idx, e in enumerate(self.merged_df.columns):
+            # skip the RecordTime column
             if idx == 1:
                 continue
             h = {}
