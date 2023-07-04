@@ -26,7 +26,7 @@ class DataHandler:
         events_data: DataFrame.
         target_data: DataFrame.
         data_path: Path.
-            path to save processed data, default: './datasets'.
+            path to save processed data, default: Path('./datasets').
 
     """
 
