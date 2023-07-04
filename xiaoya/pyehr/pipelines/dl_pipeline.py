@@ -15,7 +15,7 @@ class DlPipeline(L.LightningModule):
         self.save_hyperparameters()
         self.demo_dim = config["demo_dim"] if "demo_dim" in config else 0
         self.lab_dim = config["lab_dim"] if "lab_dim" in config else 0
-        self.input_dim = self.demo_dim + self.lab_dim + 1
+        self.input_dim = self.demo_dim + self.lab_dim
         config["input_dim"] = self.input_dim
         self.hidden_dim = config["hidden_dim"] if "hidden_dim" in config else 32
         self.output_dim = config["output_dim"] if "output_dim" in config else 1

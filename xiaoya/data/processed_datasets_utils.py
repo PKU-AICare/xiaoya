@@ -76,7 +76,7 @@ def forward_fill_pipeline(
 
         for _, v in sorted_group.iterrows():
             patient_y.append([v["Outcome"], v["LOS"]])
-            x = [v["PatientID"]]
+            x = []
             for f in demographic_features + labtest_features:
                 x.append(v[f])
             patient_x.append(x)
