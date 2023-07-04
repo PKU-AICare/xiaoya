@@ -6,8 +6,16 @@ import pandas as pd
 
 def get_features(df, table_type: str) -> List:
     """
-    df: DataFrame.
-    table_type: 'labtest' or 'events' or 'target'
+    Get list of features from DataFrame.
+
+    Args:
+        df: DataFrame.
+        table_type: str.
+            'labtest' or 'events' or 'target'.
+
+    Returns:
+        feats: List.
+            特征列表
     """
 
     if table_type in ['labtest', 'events']:
@@ -20,7 +28,16 @@ def get_features(df, table_type: str) -> List:
 
 def to_dataframe(df: pd.DataFrame, table_type: str) -> pd.DataFrame:
     """
-    将读入的文件转换为标准格式，方便后续合并
+    Change the format of DataFrame.
+
+    Args:
+        df: DataFrame.
+        table_type: str.
+            'labtest' or 'events' or 'target'.
+
+    Returns:
+        df: DataFrame.
+            DataFrame in standard format.
     """
     if table_type == 'target':
         df = df.drop_duplicates(subset=['PatientID', 'RecordTime'], keep='last')
@@ -42,23 +59,20 @@ def to_dataframe(df: pd.DataFrame, table_type: str) -> pd.DataFrame:
     df.sort_values(by=['PatientID', 'RecordTime'], inplace=True)
     return df
 
-def merge_dfs(df_labtest, df_events=None, df_target=None) -> pd.DataFrame:
+def merge_dfs(df_labtest, df_events, df_target) -> pd.DataFrame:
     """
-    将多个DataFrame合并为一个
+    Merge DataFrames.
+
     """
     df = df_labtest 
-
-    if df_events is not None:
-        df = pd.merge(df, df_events, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
-
-    if df_target is not None:
-        df = pd.merge(df, df_target, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
+    df = pd.merge(df, df_events, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
+    df = pd.merge(df, df_target, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
     
-    # 前向填充events
+    # Forward fill events.
     for col in df_events.columns.tolist():
         df[col] = df[col].fillna(method='ffill')
 
-    # 调整列的顺序
+    # Change the order of columns.
     cols = ['PatientID', 'RecordTime', 'Outcome', 'LOS', 'Sex', 'Age']
     all_cols = df.columns.tolist()
     for col in cols:
