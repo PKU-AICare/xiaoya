@@ -1,8 +1,6 @@
 import os
 from pathlib import Path
 
-import pandas as pd
-import numpy as np
 import torch
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
@@ -24,28 +22,28 @@ class Pipeline:
                 - RNN
                 - MLP
         task: str. 
-            the task, available tasks:
+            the task, default is multitask, available tasks:
                 - multitask
                 - outcome
                 - los
         batch_size: int.
-            the batch size.
+            the batch size, default is 64.
         learning_rate: float.
-            the learning rate.
+            the learning rate, default is 0.001.
         hidden_dim: int.
-            the hidden dimension.
+            the hidden dimension, default is 32.
         epochs: int.
-            the number of epochs.
+            the number of epochs, default is 100.
         patience: int.
-            the patience for early stopping.
+            the patience for early stopping, default is 10.
         seed: int.
-            the random seed.
-        pretrained_model_path: str.
-            the path of the pretrained model.
-        data_path: str.
-            the path of the data.
-        ckpt_path: str.
-            the path to save the checkpoints.
+            the random seed, default is 42.
+        pretrained_model_path: Path.
+            the path of the pretrained model, default is None.
+        data_path: Path.
+            the path of the data, default is Path('./datasets').
+        ckpt_path: Path.
+            the path to save the checkpoints, default is Path('./checkpoints').
         demographic_dim: int.
             the dimension of the demographic features.
         labtest_dim: int.
@@ -148,7 +146,7 @@ class Pipeline:
         trainer = L.Trainer(accelerator=accelerator, max_epochs=1, logger=False, num_sanity_val_steps=0)
         trainer.test(pipeline, datamodule=dm, ckpt_path=model_path)
 
-        return pipeline.test_performance, pipeline.attn
+        return pipeline.test_performance
 
     def execute(self):
         """
