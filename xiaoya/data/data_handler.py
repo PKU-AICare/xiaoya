@@ -85,11 +85,9 @@ class DataHandler:
         """
         
         len_df = len(self.merged_df.index)
+        features = self.extract_features()
         statistic_info = []
-        for idx, e in enumerate(self.merged_df.columns):
-            # skip the RecordTime column
-            if idx == 1:
-                continue
+        for idx, e in enumerate(['PatientID'] + features['target_features'] + features['events_features'] + features['labtest_features']):
             h = {}
             h["id"] = idx
             h["name"] = e
