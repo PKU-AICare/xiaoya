@@ -25,7 +25,7 @@ class DataHandler:
         labtest_data: DataFrame.
         events_data: DataFrame.
         target_data: DataFrame.
-        data_path: str.
+        data_path: Path.
             path to save processed data, default: './datasets'.
 
     """
@@ -35,7 +35,7 @@ class DataHandler:
             labtest_data: pd.DataFrame,
             events_data: pd.DataFrame,
             target_data: pd.DataFrame,
-            data_path: str = Path('./datasets'),
+            data_path: Path = Path('./datasets'),
             save_processed_data: bool = False
         ) -> None:
 
@@ -54,7 +54,7 @@ class DataHandler:
         )
         self.data_path = data_path
         if save_processed_data:
-            Path(data_path).mkdir(parents=True, exist_ok=True)
+            data_path.mkdir(parents=True, exist_ok=True)
             self.labtest_standard_df.to_csv(os.path.join(data_path, 'labtest_standard_data.csv'), index=False)
             self.events_standard_df.to_csv(os.path.join(data_path, 'events_standard_data.csv'), index=False)
             self.target_standard_df.to_csv(os.path.join(data_path, 'target_standard_data.csv'), index=False)
@@ -217,7 +217,7 @@ class DataHandler:
         self.forward_fill_dataset(demographic_features, labtest_features)
 
         # Save the dataframes
-        Path(data_path).mkdir(parents=True, exist_ok=True)
+        data_path.mkdir(parents=True, exist_ok=True)
         self.train_raw_df.to_csv(os.path.join(data_path, "train_raw.csv"), index=False)
         self.val_raw_df.to_csv(os.path.join(data_path, "val_raw.csv"), index=False)
         self.test_raw_df.to_csv(os.path.join(data_path, "test_raw.csv"), index=False)
