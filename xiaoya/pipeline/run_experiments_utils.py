@@ -9,7 +9,23 @@ from pyehr.dataloaders import EhrDataModule
 from pyehr.pipelines import DlPipeline
 
 
-def model_train(config: dict, data_url: str, ckpts_url: str):
+def model_train(config: dict, data_url: str, ckpts_url: str) -> str:
+    """
+    Train the model.
+
+    Args:
+        config: dict.
+            the config of the model.
+        data_url: str.
+            the url of the data.
+        ckpts_url: str.
+            the url to save the checkpoints.
+
+    Returns:
+        best_model_path: str.
+            the path of the best model.
+    """
+
     los_config = get_los_info(data_url)
 
     main_metric = 'auprc' if config['task'] in ['outcome', 'multitask'] else 'mae'
@@ -45,6 +61,18 @@ def model_train(config: dict, data_url: str, ckpts_url: str):
 
 
 def model_predict(config: dict, data_url: str, ckpts_url: str):
+    """
+    Use the best model to predict.
+
+    Args:
+        config: dict.
+            the config of the model.
+        data_url: str.
+            the url of the data.
+        ckpts_url: str.
+            the url to save the checkpoints.
+    """
+
     los_config = get_los_info(data_url)
     config.update({"los_info": los_config})
 
@@ -60,32 +88,3 @@ def model_predict(config: dict, data_url: str, ckpts_url: str):
     trainer.test(pipeline, datamodule=dm, ckpt_path=ckpts_url)
     # perf = pipeline.test_performance
     return pipeline.test_performance
-
-
-def feature_weights(config: dict, data_url: str, ckpts_url: str, patient_id: int):
-    los_config = get_los_info(data_url)
-    config.update({"los_info": los_config})
-
-    # data
-    dm = EhrDataModule(data_url, batch_size=config['batch_size'])
-
-    # device
-    accelerator = 'gpu' if torch.cuda.is_available() else 'cpu'
-
-    # train/val/test
-    pipeline = DlPipeline(config)
-    trainer = L.Trainer(accelerator=accelerator, max_epochs=1, logger=False, num_sanity_val_steps=0)
-    trainer.test(pipeline, datamodule=dm, ckpt_path=ckpts_url)
-    feat_weights = pipeline.attn
-
-    patient_feat_weights = feat_weights[patient_id].reshape(feat_weights.shape[1], -1).abs().sum(-1).squeeze(-1)
-    patient_feat_weights = patient_feat_weights / patient_feat_weights.sum()
-
-    lab_dim = feat_weights.shape[2]
-    feat_weights = feat_weights.transpose(0, 2).reshape(lab_dim, -1).abs().sum(-1).squeeze(-1)
-    feat_weights = feat_weights / feat_weights.sum()
-
-    print(patient_feat_weights)
-    print(feat_weights)
-
-    return patient_feat_weights, feat_weights
