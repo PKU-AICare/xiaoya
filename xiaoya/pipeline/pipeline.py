@@ -115,9 +115,7 @@ class Pipeline:
         accelerator = 'gpu' if torch.cuda.is_available() else 'cpu'
 
         pipeline = DlPipeline(self.config)
-        trainer = L.Trainer(accelerator=accelerator, max_epochs=self.config['epochs'],
-                            callbacks=[early_stopping_callback, checkpoint_callback], logger=False,
-                            enable_progress_bar=True)
+        trainer = L.Trainer(accelerator=accelerator, max_epochs=self.config['epochs'], callbacks=[early_stopping_callback, checkpoint_callback], logger=False, enable_progress_bar=True)
         trainer.fit(pipeline, datamodule=dm)
         return checkpoint_callback.best_model_path
 
