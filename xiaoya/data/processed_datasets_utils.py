@@ -95,29 +95,41 @@ def filter_outlier(element):
         return element
 
 
-def normalize_dataframe(train_df, val_df, test_df, normalize_features):
+def normalize_dataframe(
+    train_df: pd.DataFrame, 
+    val_df: pd.DataFrame, 
+    test_df: pd.DataFrame, 
+    normalize_features: list[str],
+):
     # Calculate the quantiles
-    q_low = train_df[normalize_features].quantile(0.05)
-    q_high = train_df[normalize_features].quantile(0.95)
+    q_low = train_df[normalize_features].quantile(0.05, numeric_only=False)
+    q_high = train_df[normalize_features].quantile(0.95, numeric_only=False)
 
     # Filter the DataFrame based on the quantiles
-    filtered_df = train_df[(train_df[normalize_features] > q_low) & 
-                           (train_df[normalize_features] < q_high)]
+    filtered_df = train_df[(train_df[normalize_features] > q_low) & (
+        train_df[normalize_features] < q_high)]
 
     # Calculate the mean and standard deviation and median of the filtered data, also the default fill value
     train_mean = filtered_df[normalize_features].mean()
     train_std = filtered_df[normalize_features].std()
     train_median = filtered_df[normalize_features].median()
-    default_fill: pd.DataFrame = (train_median-train_mean)/(train_std+1e-12)
+    default_fill: pd.DataFrame = (train_median - train_mean) / (train_std + 1e-12)
 
     # LOS info
-    los_info = {"los_mean": train_mean["LOS"].item(
-    ), "los_std": train_std["LOS"].item(), "los_median": train_median["LOS"].item()}
+    los_info = {"los_mean": train_mean["LOS"].item(), 
+    "los_std": train_std["LOS"].item(), "los_median": train_median["LOS"].item()}
+
+    # Calculate large los and threshold (optional, designed for covid-19 benchmark)
+    los_array = train_df.groupby('PatientID')['LOS'].max().values
+    los_p95 = np.percentile(los_array, 95)
+    los_p5 = np.percentile(los_array, 5)
+    filtered_los = los_array[(los_array >= los_p5) & (los_array <= los_p95)]
+    los_info.update({"large_los": los_p95.item(), "threshold": filtered_los.mean().item()*0.5})
 
     # Z-score normalize the train, val, and test sets with train_mean and train_std
-    train_df[normalize_features] = (train_df[normalize_features] - train_mean) / (train_std+1e-12)
-    val_df[normalize_features] = (val_df[normalize_features] - train_mean) / (train_std+1e-12)
-    test_df[normalize_features] = (test_df[normalize_features] - train_mean) / (train_std+1e-12)
+    train_df[normalize_features] = (train_df[normalize_features] - train_mean) / (train_std + 1e-12)
+    val_df[normalize_features] = (val_df[normalize_features] - train_mean) / (train_std + 1e-12)
+    test_df[normalize_features] = (test_df[normalize_features] - train_mean) / (train_std + 1e-12)
         
     train_df.loc[:, normalize_features] = train_df.loc[:, normalize_features].applymap(filter_outlier)
     val_df.loc[:, normalize_features] = val_df.loc[:, normalize_features].applymap(filter_outlier)
@@ -126,8 +138,13 @@ def normalize_dataframe(train_df, val_df, test_df, normalize_features):
     return train_df, val_df, test_df, default_fill, los_info, train_mean, train_std
 
 
-def normalize_df_with_statatistics(df, normalize_features, train_mean, train_std):
-    df[normalize_features] = (df[normalize_features] - train_mean) / (train_std+1e-12)
+def normalize_df_with_statatistics(
+    df: pd.DataFrame, 
+    normalize_features: list[str], 
+    train_mean, 
+    train_std
+):
+    df[normalize_features] = (df[normalize_features] - train_mean) / (train_std + 1e-12)
     df.loc[:, normalize_features] = df.loc[:, normalize_features].applymap(filter_outlier)
     return df
 
@@ -137,4 +154,3 @@ def one_hot_encoder(arr: np.ndarray) -> np.ndarray:
     n_values = np.max(arr) + 1
 
     return np.eye(n_values)[arr]
-
