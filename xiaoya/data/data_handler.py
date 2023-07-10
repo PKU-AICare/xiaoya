@@ -102,11 +102,11 @@ class DataHandler:
         return statistic_info
     
     def split_dataset(self, 
-                    train: int = 70, 
-                    val: int = 10, 
-                    test: int = 20, 
-                    seed: int = 42
-                ) -> None:
+            train: int = 70, 
+            val: int = 10, 
+            test: int = 20, 
+            seed: int = 42
+        ) -> None:
         """
         Split the dataset into train/val/test sets.
 
@@ -140,8 +140,8 @@ class DataHandler:
         self.test_raw_df = self.merged_df[self.merged_df['PatientID'].isin(test_patients)]
     
     def normalize_dataset(self,
-                        normalize_features: List[str]
-                    ) -> None:
+            normalize_features: List[str]
+        ) -> None:
         """
         Normalize the dataset.
 
@@ -160,9 +160,9 @@ class DataHandler:
         self.test_after_zscore = test_after_zscore.dropna(axis=0, how='all', subset=normalize_features)
 
     def forward_fill_dataset(self,
-                            demographic_features: List[str],
-                            labtest_features: List[str]
-                        ) -> None:
+            demographic_features: List[str],
+            labtest_features: List[str]
+        ) -> None:
         """
         Forward fill the dataset.
 
@@ -179,11 +179,11 @@ class DataHandler:
         self.test_x, self.test_y, self.test_pid = forward_fill_pipeline(self.test_after_zscore, self.default_fill, demographic_features, labtest_features)
 
     def execute(self,
-        train: int = 70,
-        val: int = 10,
-        test: int = 20,
-        seed: int = 42,
-    ) -> None:
+            train: int = 70,
+            val: int = 10,
+            test: int = 20,
+            seed: int = 42,
+        ) -> None:
         """
         Execute the preprocessing pipeline, including split the dataset, normalize the dataset, and forward fill the dataset.
 
