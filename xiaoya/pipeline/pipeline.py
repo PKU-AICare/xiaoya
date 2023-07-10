@@ -51,20 +51,19 @@ class Pipeline:
     """
 
     def __init__(self,
-                model: str = 'GRU',
-                batch_size: int = 64,
-                learning_rate: float = 0.001,
-                hidden_dim: int = 32,
-                epochs: int = 100,
-                patience: int = 10,
-                task: str = 'multitask',
-                seed: int = 42,
-                pretrained_model_path: Path = None,
-                data_path: Path = Path('./datasets'),
-                ckpt_path: Path = Path('./checkpoints'),
-                demographic_dim: int = 2,
-                labtest_dim: int = 73
-            ) -> None:
+            model: str = 'GRU',
+            batch_size: int = 64,
+            learning_rate: float = 0.001,
+            hidden_dim: int = 32,
+            epochs: int = 100,
+            patience: int = 10,
+            task: str = 'multitask',
+            seed: int = 42,
+            data_path: Path = Path('./datasets'),
+            ckpt_path: Path = Path('./checkpoints'),
+            demographic_dim: int = 2,
+            labtest_dim: int = 73
+        ) -> None:
         
         self.config = {
             'model': model,
@@ -76,7 +75,6 @@ class Pipeline:
             'patience': patience,
             'task': task,
             'seed': seed,
-            'pretrained_model_path': pretrained_model_path,
 
             'demo_dim': demographic_dim,
             'lab_dim': labtest_dim,
@@ -146,7 +144,7 @@ class Pipeline:
 
         return pipeline.test_performance
 
-    def execute(self):
+    def execute(self, model_path: str = None):
         """
         Execute the pipeline.
 
@@ -154,7 +152,6 @@ class Pipeline:
             dict: the performance of the model.
         """
 
-        model_path = self.config['pretrained_model_path']
         if model_path is None:
             model_path = self.train()
         return self.predict(model_path)
