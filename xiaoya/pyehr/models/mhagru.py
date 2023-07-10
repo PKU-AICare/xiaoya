@@ -18,12 +18,23 @@ class MHAGRU(nn.Module):
             ]
         )
         self.mha = nn.MultiheadAttention(feat_dim, self.num_heads, dropout=drop, batch_first=True)
+        self.time_step_score = nn.Sequential(
+            nn.Linear(input_dim, input_dim // 4),
+            nn.GELU(),
+            nn.Linear(input_dim // 4, 1),
+            nn.Sigmoid()
+        )
         self.out_proj = nn.Linear(input_dim * feat_dim, hidden_dim)
+        self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(drop)
     
     def forward(self, x, **kwargs):
         # x: [bs, time_steps, input_dim]
-        bs, time_steps, _ = x.shape
+        bs, time_steps, input_dim = x.shape
+
+        x_unrolled = x.contiguous().view(-1, input_dim)    # [bs * t, h]
+        time_step_importance = self.time_step_score(x_unrolled).view(bs, time_steps) # [bs, t]
+
         x = self.input_proj(x)   # [bs, time_steps, input_dim] -> [bs, time_steps, hidden_dim]
         out = torch.zeros(bs, time_steps, self.input_dim, self.feat_dim).to(x.device)
         attention = torch.zeros(bs, time_steps, self.input_dim, self.feat_dim).to(x.device)
@@ -37,4 +48,14 @@ class MHAGRU(nn.Module):
 
         out = out.flatten(2)        # [bs, time, input, feat] -> [bs, time, input * feat]
         out = self.out_proj(out)    # [bs, time, input * feat] -> [bs, time, hidden_dim]
-        return out, attention
+
+        feature_importance = self.sigmoid(attention.transpose(1, 2).reshape(bs, input_dim, -1).sum(-1).squeeze(-1)) # [bs, input_dim, t*f]
+
+        time_step_feature_importance = self.sigmoid(attention.sum(-1).squeeze(-1))  # [bs, time_steps, input_dim]
+        
+        scores = {
+            'feature_importance': feature_importance,
+            'time_step_importance': time_step_importance,
+            'time_step_feature_importance': time_step_feature_importance
+        }
+        return out, scores
