@@ -1,3 +1,6 @@
+from typing import Optional
+from pathlib import Path
+
 import lightning as L
 import torch
 import torch.nn as nn
@@ -78,11 +81,11 @@ class DlPipeline(L.LightningModule):
             y_hat = self.head(embedding)
             return y_hat, embedding
         elif self.model_name in ["MHAGRU"]:
-            embedding, attn = self.ehr_encoder(x)
+            embedding, scores = self.ehr_encoder(x)
             embedding = embedding.to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
-            self.attn = attn
+            self.scores = scores
             return y_hat, embedding
 
     def _get_loss(self, x, y, lens):
@@ -140,6 +143,14 @@ class DlPipeline(L.LightningModule):
         self.test_outputs = {'preds': y_pred, 'labels': y_true, 'lens': lens}
         self.test_step_outputs.clear()
         return self.test_performance
+
+    def predict_step(self, 
+            x, 
+            y: Optional[torch.Tensor] = None, 
+            lens: Optional[torch.Tensor] = None
+        ):
+        y_hat, embedding = self(x, x.shape[0])
+        return y_hat, embedding, self.scores
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
