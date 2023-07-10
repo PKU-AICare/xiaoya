@@ -1,8 +1,10 @@
 import pandas as pd
+import torch
 
 import xiaoya
 from xiaoya import data  # data handler, data loaders, etc
 from xiaoya import pipeline # training and predict pipeline
+from xiaoya import analysis # data analyzer
 
 print(xiaoya.__version__)
 
@@ -24,8 +26,16 @@ data_handler.execute()
 
 demo_dim = len(features['events_features']) + 1     # +1 for the age feature
 lab_dim =  len(features['labtest_features']) - 1    # -1 for the age feature
-pl = pipeline.Pipeline(model='GRU', demographic_dim=demo_dim, labtest_dim=lab_dim)
+pl = pipeline.Pipeline(model='MHAGRU', demographic_dim=demo_dim, labtest_dim=lab_dim)
 
 # execute the training pipeline, returns the performance of the model.
-performance = pl.execute()
+model_path = pl.train()
+performance = pl.predict(model_path)
 print(performance)
+
+analyzer = analysis.DataAnalyzer(pipeline=pl, model_path=model_path)
+x = pd.read_pickle('datasets/train_x.pkl')
+x = torch.tensor(x[0]).unsqueeze(0)
+scores = analyzer.get_importance_scores(x)
+for key, value in scores.items():
+    print(key, value)
