@@ -37,5 +37,7 @@ analyzer = analysis.DataAnalyzer(pipeline=pl, model_path=model_path)
 x = pd.read_pickle('datasets/train_x.pkl')
 x = torch.tensor(x[0]).unsqueeze(0)
 scores = analyzer.get_importance_scores(x)
+res=analyzer.data_dimension_reduction(x,"PCA",2,"Outcome")
+print(res)
 for key, value in scores.items():
     print(key, value)

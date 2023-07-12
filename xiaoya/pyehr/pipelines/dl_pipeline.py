@@ -149,6 +149,7 @@ class DlPipeline(L.LightningModule):
             y: Optional[torch.Tensor] = None, 
             lens: Optional[torch.Tensor] = None
         ):
+        print(x.shape)
         y_hat, embedding = self(x, x.shape[0])
         return y_hat, embedding, self.scores
 
