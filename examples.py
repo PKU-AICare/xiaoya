@@ -29,14 +29,14 @@ lab_dim =  len(features['labtest_features']) - 1    # -1 for the age feature
 pl = pipeline.Pipeline(model='MHAGRU', demographic_dim=demo_dim, labtest_dim=lab_dim)
 
 # execute the training pipeline, returns the performance of the model.
-model_path = pl.train()
-performance = pl.predict(model_path)
+pl.train()
+performance = pl.predict(pl.model_path)
 print(performance)
 
-analyzer = analysis.DataAnalyzer(pipeline=pl, model_path=model_path)
+analyzer = analysis.DataAnalyzer(pipeline=pl, model_path=pl.model_path)
 x = pd.read_pickle('datasets/train_x.pkl')
 x = torch.tensor(x[0]).unsqueeze(0)
-print(analyzer.feature_advice(x))
+print(analyzer.feature_advice(x, -1))
 
 scores = analyzer.get_importance_scores(x)
 res=analyzer.data_dimension_reduction(x,"PCA",2,"Outcome")
