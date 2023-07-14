@@ -14,6 +14,7 @@ from .raw_files_utils import (
 from .processed_datasets_utils import (
     normalize_dataframe,
     forward_fill_pipeline,
+    save_record_time,
 )
 
 
@@ -139,6 +140,15 @@ class DataHandler:
         self.val_raw_df = self.merged_df[self.merged_df['PatientID'].isin(val_patients)]
         self.test_raw_df = self.merged_df[self.merged_df['PatientID'].isin(test_patients)]
     
+    def save_record_time(self) -> None:
+        """
+        Save the record time of each patient.
+        """
+
+        self.train_record_time = save_record_time(self.train_raw_df)
+        self.val_record_time = save_record_time(self.val_raw_df)
+        self.test_record_time = save_record_time(self.test_raw_df)
+
     def normalize_dataset(self,
             normalize_features: List[str]
         ) -> None:
@@ -200,14 +210,17 @@ class DataHandler:
         
         data_path = self.data_path
         features = self.extract_features()
-        demographic_features = features['events_features']
-        labtest_features = features['labtest_features']
+        demographic_features: List = features['events_features']
+        labtest_features: List = features['labtest_features']
         if 'Age' in labtest_features:
             demographic_features.append('Age')
             labtest_features.remove('Age') 
 
         # Split the dataset
         self.split_dataset(train, val, test, seed)
+
+        # Save record time
+        self.save_record_time()
 
         # Normalize the dataset
         self.normalize_dataset(['Age'] + labtest_features + ['LOS'])
@@ -227,11 +240,14 @@ class DataHandler:
 
         pd.to_pickle(self.train_x, os.path.join(data_path, "train_x.pkl"))
         pd.to_pickle(self.train_y, os.path.join(data_path, "train_y.pkl"))
+        pd.to_pickle(self.train_record_time, os.path.join(data_path, "train_record_time.pkl"))
         pd.to_pickle(self.train_pid, os.path.join(data_path, "train_pid.pkl"))
         pd.to_pickle(self.val_x, os.path.join(data_path, "val_x.pkl"))
         pd.to_pickle(self.val_y, os.path.join(data_path, "val_y.pkl"))
+        pd.to_pickle(self.val_record_time, os.path.join(data_path, "val_record_time.pkl"))
         pd.to_pickle(self.val_pid, os.path.join(data_path, "val_pid.pkl"))
         pd.to_pickle(self.test_x, os.path.join(data_path, "test_x.pkl"))
         pd.to_pickle(self.test_y, os.path.join(data_path, "test_y.pkl"))
+        pd.to_pickle(self.test_record_time, os.path.join(data_path, "test_record_time.pkl"))
         pd.to_pickle(self.test_pid, os.path.join(data_path, "test_pid.pkl"))
         pd.to_pickle(self.los_info, os.path.join(data_path, "los_info.pkl"))
