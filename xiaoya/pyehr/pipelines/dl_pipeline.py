@@ -145,11 +145,10 @@ class DlPipeline(L.LightningModule):
         return self.test_performance
 
     def predict_step(self, 
-            x, 
+            x: torch.Tensor, 
             y: Optional[torch.Tensor] = None, 
             lens: Optional[torch.Tensor] = None
         ):
-        print(x.shape)
         y_hat, embedding = self(x, x.shape[0])
         return y_hat, embedding, self.scores
 
