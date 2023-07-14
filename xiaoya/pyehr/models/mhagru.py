@@ -49,7 +49,7 @@ class MHAGRU(nn.Module):
         out = out.flatten(2)        # [bs, time, input, feat] -> [bs, time, input * feat]
         out = self.out_proj(out)    # [bs, time, input * feat] -> [bs, time, hidden_dim]
 
-        feature_importance = self.sigmoid(attention.transpose(1, 2).reshape(bs, input_dim, -1).sum(-1).squeeze(-1)) # [bs, input_dim, t*f]
+        feature_importance = self.sigmoid(attention.transpose(1, 2).reshape(bs, input_dim, -1).sum(-1).squeeze(-1)) # [bs, input_dim]
 
         time_step_feature_importance = self.sigmoid(attention.sum(-1).squeeze(-1))  # [bs, time_steps, input_dim]
         
