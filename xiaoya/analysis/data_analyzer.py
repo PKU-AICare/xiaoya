@@ -39,7 +39,10 @@ class DataAnalyzer:
         _, _, scores = pipeline.predict_step(x)
         return scores
     
-    def feature_advice(self, input: torch.Tensor) -> List:
+    def feature_advice(self,
+            input: torch.Tensor,
+            time_index: int,
+        ) -> List:
         # x: [batch_size, seq_len, feature_dim]
         config = self.pipeline.config
         config['model'] = 'MHAGRU'
@@ -47,12 +50,14 @@ class DataAnalyzer:
         pipeline = DlPipeline(config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
 
-        # three most important features in the last time step
+        # three most important labtest features in the last time step
         _, _, scores = pipeline.predict_step(input)
-        input_last_step = input[0][-1].tolist()
-        feature_last_step: List = scores['time_step_feature_importance'][0][-1].tolist()
+        # TODO: demo dim
+        demo_dim = 2
+        input_last_step = input[0][time_index].tolist()[demo_dim:]
+        feature_last_step: List = scores['time_step_feature_importance'][0][time_index].tolist()[demo_dim:]
 
-        index_dict = {index: value for index, value in enumerate(feature_last_step) if input_last_step[index] != 0}
+        index_dict = {index: value for index, value in enumerate(feature_last_step[demo_dim:]) if input_last_step[index] != 0}
         max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
         if len(max_indices) > 3:
             max_indices = max_indices[:3]
@@ -60,18 +65,14 @@ class DataAnalyzer:
         def f(x, args):
             input, i = args
             input[-1][-1][i] = torch.from_numpy(x).float()
-            _, _, scores = pipeline.predict_step(input)
-            return scores['time_step_importance'][0][-1].detach().numpy()
+            y_hat, _, _ = pipeline.predict_step(input)      # y_hat: [bs, seq_len, 2]
+            return y_hat[0][time_index][0].detach().numpy()
 
         result = []
         for i in max_indices:
+            print('index: ', i)
             x0 = float(input[-1][-1][i])
-            if x0 > 1e-5:
-                bounds = (x0 / 2, 2 * x0)
-            elif x0 < -1e-5:
-                bounds = (2 * x0, x0 / 2)
-            else:
-                bounds = (-0.1, 0.1)
+            bounds = (max(-3, x0 - 1), min(3, x0 + 1))
             args = (input, i)
             res = optimize.minimize(f, x0=x0, bounds=(bounds,), args=(args,), method='nelder-mead', options={'disp': True})
             result.append(res.x[0])
