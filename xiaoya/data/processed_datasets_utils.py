@@ -81,9 +81,7 @@ def forward_fill_pipeline(
 
 # outlier processing
 def filter_outlier(element):
-    if pd.isna(element):
-        return 0
-    elif np.abs(float(element)) > 1e4:
+    if np.abs(float(element)) > 1e4:
         return 0
     else:
         return element
@@ -123,7 +121,7 @@ def normalize_dataframe(
     train_df[normalize_features] = (train_df[normalize_features] - train_mean) / (train_std + 1e-12)
     val_df[normalize_features] = (val_df[normalize_features] - train_mean) / (train_std + 1e-12)
     test_df[normalize_features] = (test_df[normalize_features] - train_mean) / (train_std + 1e-12)
-        
+
     train_df.loc[:, normalize_features] = train_df.loc[:, normalize_features].applymap(filter_outlier)
     val_df.loc[:, normalize_features] = val_df.loc[:, normalize_features].applymap(filter_outlier)
     test_df.loc[:, normalize_features] = test_df.loc[:, normalize_features].applymap(filter_outlier)
