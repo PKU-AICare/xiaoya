@@ -1,9 +1,12 @@
+from typing import List
+import heapq
+
 import torch
 import lightning as L
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
-from typing import List
+from scipy import optimize
 
 from xiaoya.pyehr.pipelines import DlPipeline
 from xiaoya.pipeline import Pipeline
@@ -28,15 +31,52 @@ class DataAnalyzer:
         self.model_path = model_path
 
     def get_importance_scores(self, x) -> torch.Tensor:
-        # config
         config = self.pipeline.config
         config['model'] = 'MHAGRU'
     
-        # train/val/test
         pipeline = DlPipeline(config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
-        y_hat, embedding, scores = pipeline.predict_step(x)
+        _, _, scores = pipeline.predict_step(x)
         return scores
+    
+    def feature_advice(self,
+            input: torch.Tensor,
+            time_index: int,
+        ) -> List:
+        # x: [batch_size, seq_len, feature_dim]
+        config = self.pipeline.config
+        config['model'] = 'MHAGRU'
+
+        pipeline = DlPipeline(config)
+        pipeline = pipeline.load_from_checkpoint(self.model_path)
+
+        # three most important labtest features in the last time step
+        _, _, scores = pipeline.predict_step(input)
+        # TODO: demo dim
+        demo_dim = 2
+        input_last_step = input[0][time_index].tolist()[demo_dim:]
+        feature_last_step: List = scores['time_step_feature_importance'][0][time_index].tolist()[demo_dim:]
+
+        index_dict = {index: value for index, value in enumerate(feature_last_step[demo_dim:]) if input_last_step[index] != 0}
+        max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
+        if len(max_indices) > 3:
+            max_indices = max_indices[:3]
+
+        def f(x, args):
+            input, i = args
+            input[-1][-1][i] = torch.from_numpy(x).float()
+            y_hat, _, _ = pipeline.predict_step(input)      # y_hat: [bs, seq_len, 2]
+            return y_hat[0][time_index][0].detach().numpy()
+
+        result = []
+        for i in max_indices:
+            print('index: ', i)
+            x0 = float(input[-1][-1][i])
+            bounds = (max(-3, x0 - 1), min(3, x0 + 1))
+            args = (input, i)
+            res = optimize.minimize(f, x0=x0, bounds=(bounds,), args=(args,), method='nelder-mead', options={'disp': True})
+            result.append(res.x[0])
+        return result
 
     def data_dimension_reduction(self,x,method,dimension,target)-> List:
         config = self.pipeline.config

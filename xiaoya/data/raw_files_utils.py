@@ -55,7 +55,7 @@ def to_dataframe(df: pd.DataFrame, table_type: str) -> pd.DataFrame:
                 df_new.loc[i, row['Name']] = row['Value']
         df = df_new
 
-    df['RecordTime'] = pd.to_datetime(df['RecordTime'], format='%Y-%m-%d')
+    df['RecordTime'] = pd.to_datetime(df['RecordTime'])
     df.sort_values(by=['PatientID', 'RecordTime'], inplace=True)
     return df
 

@@ -82,6 +82,7 @@ class Pipeline:
         self.data_path = data_path
         self.ckpt_path = ckpt_path
         self.los_info = get_los_info(data_path)
+        self.model_path = None
 
     def train(self) -> str:
         """
@@ -115,7 +116,7 @@ class Pipeline:
         pipeline = DlPipeline(self.config)
         trainer = L.Trainer(accelerator=accelerator, max_epochs=self.config['epochs'], callbacks=[early_stopping_callback, checkpoint_callback], logger=False, enable_progress_bar=True)
         trainer.fit(pipeline, datamodule=dm)
-        return checkpoint_callback.best_model_path
+        self.model_path = checkpoint_callback.best_model_path
 
     def predict(self, model_path: str):
         """

@@ -1,11 +1,5 @@
-import os
-import math
-import copy
-from pathlib import Path
-
 import pandas as pd
 import numpy as np
-from sklearn.model_selection import train_test_split
 
 
 def df_column_switch(df: pd.DataFrame, column1, column2):
@@ -58,24 +52,24 @@ def forward_fill_pipeline(
     demographic_features: list[str],
     labtest_features: list[str],
 ):
-    grouped = df.groupby("PatientID")
+    grouped = df.groupby('PatientID')
 
     all_x = []
     all_y = []
     all_pid = []
 
     for name, group in grouped:
-        sorted_group = group.sort_values(by=["RecordTime"], ascending=True)
+        sorted_group = group.sort_values(by=['RecordTime'], ascending=True)
         patient_x = []
         patient_y = []
 
-        for f in ["Age"] + labtest_features:
+        for f in ['Age'] + labtest_features:
             to_fill_value = default_fill[f]
             # take median patient as the default to-fill missing value
             fill_missing_value(sorted_group[f].values, to_fill_value)
 
         for _, v in sorted_group.iterrows():
-            patient_y.append([v["Outcome"], v["LOS"]])
+            patient_y.append([v['Outcome'], v['LOS']])
             x = []
             for f in demographic_features + labtest_features:
                 x.append(v[f])
@@ -87,9 +81,7 @@ def forward_fill_pipeline(
 
 # outlier processing
 def filter_outlier(element):
-    if pd.isna(element):
-        return 0
-    elif np.abs(float(element)) > 1e4:
+    if np.abs(float(element)) > 1e4:
         return 0
     else:
         return element
@@ -102,8 +94,8 @@ def normalize_dataframe(
     normalize_features: list[str],
 ):
     # Calculate the quantiles
-    q_low = train_df[normalize_features].quantile(0.05, numeric_only=False)
-    q_high = train_df[normalize_features].quantile(0.95, numeric_only=False)
+    q_low = train_df[normalize_features].quantile(0.05)
+    q_high = train_df[normalize_features].quantile(0.95)
 
     # Filter the DataFrame based on the quantiles
     filtered_df = train_df[(train_df[normalize_features] > q_low) & (
@@ -116,21 +108,20 @@ def normalize_dataframe(
     default_fill: pd.DataFrame = (train_median - train_mean) / (train_std + 1e-12)
 
     # LOS info
-    los_info = {"los_mean": train_mean["LOS"].item(), 
-    "los_std": train_std["LOS"].item(), "los_median": train_median["LOS"].item()}
+    los_info = {'los_mean': train_mean['LOS'], 'los_std': train_std['LOS'], 'los_median': train_median['LOS']}
 
     # Calculate large los and threshold (optional, designed for covid-19 benchmark)
     los_array = train_df.groupby('PatientID')['LOS'].max().values
     los_p95 = np.percentile(los_array, 95)
     los_p5 = np.percentile(los_array, 5)
     filtered_los = los_array[(los_array >= los_p5) & (los_array <= los_p95)]
-    los_info.update({"large_los": los_p95.item(), "threshold": filtered_los.mean().item()*0.5})
+    los_info.update({'large_los': los_p95.item(), 'threshold': filtered_los.mean().item()*0.5})
 
     # Z-score normalize the train, val, and test sets with train_mean and train_std
     train_df[normalize_features] = (train_df[normalize_features] - train_mean) / (train_std + 1e-12)
     val_df[normalize_features] = (val_df[normalize_features] - train_mean) / (train_std + 1e-12)
     test_df[normalize_features] = (test_df[normalize_features] - train_mean) / (train_std + 1e-12)
-        
+
     train_df.loc[:, normalize_features] = train_df.loc[:, normalize_features].applymap(filter_outlier)
     val_df.loc[:, normalize_features] = val_df.loc[:, normalize_features].applymap(filter_outlier)
     test_df.loc[:, normalize_features] = test_df.loc[:, normalize_features].applymap(filter_outlier)
@@ -147,6 +138,18 @@ def normalize_df_with_statatistics(
     df[normalize_features] = (df[normalize_features] - train_mean) / (train_std + 1e-12)
     df.loc[:, normalize_features] = df.loc[:, normalize_features].applymap(filter_outlier)
     return df
+
+
+def save_record_time(
+    df: pd.DataFrame,
+):
+    grouped = df.groupby('PatientID')
+    all_record_time = []
+    for _, group in grouped:
+        sorted_group = group.sort_values(by=['RecordTime'], ascending=True)
+        record_time = sorted_group['RecordTime'].values
+        all_record_time.append(record_time)
+    return all_record_time
 
 
 def one_hot_encoder(arr: np.ndarray) -> np.ndarray:
