@@ -161,7 +161,7 @@ class DataHandler:
         """
 
         # Calculate the mean and std of the train set (include age, lab test features, and LOS) on the data in 5% to 95% quantile range
-        train_after_zscore, val_after_zscore, test_after_zscore, self.default_fill, self.los_info, _, _ = \
+        train_after_zscore, val_after_zscore, test_after_zscore, self.default_fill, self.los_info, self.train_mean, self.train_std = \
             normalize_dataframe(self.train_raw_df, self.val_raw_df, self.test_raw_df, normalize_features)
         
         # Drop rows if all features are recorded NaN
@@ -230,24 +230,26 @@ class DataHandler:
 
         # Save the dataframes
         data_path.mkdir(parents=True, exist_ok=True)
-        self.train_raw_df.to_csv(os.path.join(data_path, "train_raw.csv"), index=False)
-        self.val_raw_df.to_csv(os.path.join(data_path, "val_raw.csv"), index=False)
-        self.test_raw_df.to_csv(os.path.join(data_path, "test_raw.csv"), index=False)
+        self.train_raw_df.to_csv(os.path.join(data_path, 'train_raw.csv'), index=False)
+        self.val_raw_df.to_csv(os.path.join(data_path, 'val_raw.csv'), index=False)
+        self.test_raw_df.to_csv(os.path.join(data_path, 'test_raw.csv'), index=False)
 
-        self.train_after_zscore.to_csv(os.path.join(data_path, "train_after_zscore.csv"), index=False)
-        self.val_after_zscore.to_csv(os.path.join(data_path, "val_after_zscore.csv"), index=False)
-        self.test_after_zscore.to_csv(os.path.join(data_path, "test_after_zscore.csv"), index=False)
+        self.train_after_zscore.to_csv(os.path.join(data_path, 'train_after_zscore.csv'), index=False)
+        self.val_after_zscore.to_csv(os.path.join(data_path, 'val_after_zscore.csv'), index=False)
+        self.test_after_zscore.to_csv(os.path.join(data_path, 'test_after_zscore.csv'), index=False)
 
-        pd.to_pickle(self.train_x, os.path.join(data_path, "train_x.pkl"))
-        pd.to_pickle(self.train_y, os.path.join(data_path, "train_y.pkl"))
-        pd.to_pickle(self.train_record_time, os.path.join(data_path, "train_record_time.pkl"))
-        pd.to_pickle(self.train_pid, os.path.join(data_path, "train_pid.pkl"))
-        pd.to_pickle(self.val_x, os.path.join(data_path, "val_x.pkl"))
-        pd.to_pickle(self.val_y, os.path.join(data_path, "val_y.pkl"))
-        pd.to_pickle(self.val_record_time, os.path.join(data_path, "val_record_time.pkl"))
-        pd.to_pickle(self.val_pid, os.path.join(data_path, "val_pid.pkl"))
-        pd.to_pickle(self.test_x, os.path.join(data_path, "test_x.pkl"))
-        pd.to_pickle(self.test_y, os.path.join(data_path, "test_y.pkl"))
-        pd.to_pickle(self.test_record_time, os.path.join(data_path, "test_record_time.pkl"))
-        pd.to_pickle(self.test_pid, os.path.join(data_path, "test_pid.pkl"))
-        pd.to_pickle(self.los_info, os.path.join(data_path, "los_info.pkl"))
+        pd.to_pickle(self.train_x, os.path.join(data_path, 'train_x.pkl'))
+        pd.to_pickle(self.train_y, os.path.join(data_path, 'train_y.pkl'))
+        pd.to_pickle(self.train_record_time, os.path.join(data_path, 'train_record_time.pkl'))
+        pd.to_pickle(self.train_pid, os.path.join(data_path, 'train_pid.pkl'))
+        pd.to_pickle(self.val_x, os.path.join(data_path, 'val_x.pkl'))
+        pd.to_pickle(self.val_y, os.path.join(data_path, 'val_y.pkl'))
+        pd.to_pickle(self.val_record_time, os.path.join(data_path, 'val_record_time.pkl'))
+        pd.to_pickle(self.val_pid, os.path.join(data_path, 'val_pid.pkl'))
+        pd.to_pickle(self.test_x, os.path.join(data_path, 'test_x.pkl'))
+        pd.to_pickle(self.test_y, os.path.join(data_path, 'test_y.pkl'))
+        pd.to_pickle(self.test_record_time, os.path.join(data_path, 'test_record_time.pkl'))
+        pd.to_pickle(self.test_pid, os.path.join(data_path, 'test_pid.pkl'))
+        pd.to_pickle(self.los_info, os.path.join(data_path, 'los_info.pkl'))
+        pd.to_pickle(dict(self.train_mean), os.path.join(data_path, 'datasets/train_mean.pkl'))
+        pd.to_pickle(dict(self.train_std), os.path.join(data_path, 'datasets/train_std.pkl'))
