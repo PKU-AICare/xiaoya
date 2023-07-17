@@ -113,5 +113,3 @@ class DataAnalyzer:
                 }
             )
             return list(zip([df_subset["3d-one"].tolist(), df_subset["3d-two"].tolist(), df_subset["3d-three"].tolist(), df_subset["target"].tolist()]))
-        res = {"message": "reduction fail"}
-        return res
