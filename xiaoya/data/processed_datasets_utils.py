@@ -57,11 +57,13 @@ def forward_fill_pipeline(
     all_x = []
     all_y = []
     all_pid = []
+    all_missing_mask = []
 
     for name, group in grouped:
         sorted_group = group.sort_values(by=['RecordTime'], ascending=True)
         patient_x = []
         patient_y = []
+        patient_missing_mask = pd.isna(sorted_group[labtest_features].values)
 
         for f in ['Age'] + labtest_features:
             to_fill_value = default_fill[f]
@@ -77,7 +79,8 @@ def forward_fill_pipeline(
         all_x.append(patient_x)
         all_y.append(patient_y)
         all_pid.append(name)
-    return all_x, all_y, all_pid
+        all_missing_mask.append(patient_missing_mask)
+    return all_x, all_y, all_pid, all_missing_mask
 
 # outlier processing
 def filter_outlier(element):

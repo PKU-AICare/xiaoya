@@ -184,9 +184,9 @@ class DataHandler:
         """
         
         # Forward Imputation after grouped by PatientID
-        self.train_x, self.train_y, self.train_pid = forward_fill_pipeline(self.train_after_zscore, self.default_fill, demographic_features, labtest_features)
-        self.val_x, self.val_y, self.val_pid = forward_fill_pipeline(self.val_after_zscore, self.default_fill, demographic_features, labtest_features)
-        self.test_x, self.test_y, self.test_pid = forward_fill_pipeline(self.test_after_zscore, self.default_fill, demographic_features, labtest_features)
+        self.train_x, self.train_y, self.train_pid, self.train_missing_mask = forward_fill_pipeline(self.train_after_zscore, self.default_fill, demographic_features, labtest_features)
+        self.val_x, self.val_y, self.val_pid, self.val_missing_mask = forward_fill_pipeline(self.val_after_zscore, self.default_fill, demographic_features, labtest_features)
+        self.test_x, self.test_y, self.test_pid, self.test_missing_mask = forward_fill_pipeline(self.test_after_zscore, self.default_fill, demographic_features, labtest_features)
 
     def execute(self,
             train: int = 70,
@@ -242,14 +242,17 @@ class DataHandler:
         pd.to_pickle(self.train_y, os.path.join(data_path, 'train_y.pkl'))
         pd.to_pickle(self.train_record_time, os.path.join(data_path, 'train_record_time.pkl'))
         pd.to_pickle(self.train_pid, os.path.join(data_path, 'train_pid.pkl'))
+        pd.to_pickle(self.train_missing_mask, os.path.join(data_path, 'train_missing_mask.pkl'))
         pd.to_pickle(self.val_x, os.path.join(data_path, 'val_x.pkl'))
         pd.to_pickle(self.val_y, os.path.join(data_path, 'val_y.pkl'))
         pd.to_pickle(self.val_record_time, os.path.join(data_path, 'val_record_time.pkl'))
         pd.to_pickle(self.val_pid, os.path.join(data_path, 'val_pid.pkl'))
+        pd.to_pickle(self.val_missing_mask, os.path.join(data_path, 'val_missing_mask.pkl'))
         pd.to_pickle(self.test_x, os.path.join(data_path, 'test_x.pkl'))
         pd.to_pickle(self.test_y, os.path.join(data_path, 'test_y.pkl'))
         pd.to_pickle(self.test_record_time, os.path.join(data_path, 'test_record_time.pkl'))
         pd.to_pickle(self.test_pid, os.path.join(data_path, 'test_pid.pkl'))
+        pd.to_pickle(self.test_missing_mask, os.path.join(data_path, 'test_missing_mask.pkl'))
         pd.to_pickle(self.los_info, os.path.join(data_path, 'los_info.pkl'))
-        pd.to_pickle(dict(self.train_mean), os.path.join(data_path, 'datasets/train_mean.pkl'))
-        pd.to_pickle(dict(self.train_std), os.path.join(data_path, 'datasets/train_std.pkl'))
+        pd.to_pickle(dict(self.train_mean), os.path.join(data_path, 'train_mean.pkl'))
+        pd.to_pickle(dict(self.train_std), os.path.join(data_path, 'train_std.pkl'))
