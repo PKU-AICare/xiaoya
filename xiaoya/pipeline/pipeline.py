@@ -55,7 +55,7 @@ class Pipeline:
             batch_size: int = 64,
             learning_rate: float = 0.001,
             hidden_dim: int = 32,
-            epochs: int = 100,
+            epochs: int = 10,
             patience: int = 10,
             task: str = 'multitask',
             seed: int = 42,

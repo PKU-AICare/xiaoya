@@ -78,38 +78,44 @@ class DataAnalyzer:
             result.append(res.x[0])
         return result
 
-    def data_dimension_reduction(self,x,method,dimension,target)-> List:
-        config = self.pipeline.config
-        pipeline = DlPipeline(config)
-        pipeline = pipeline.load_from_checkpoint(self.model_path)
-        y_hat, embedding, scores = pipeline.predict_step(x)
-        array = embedding.detach().numpy()
-        array_flat=array[0]
-        df = pd.DataFrame(array_flat)
-        if method == "PCA":  # 判断降维类别
-            reduction_model = PCA().fit_transform(df)
-        elif method == "TSNE":
-            reduction_model = TSNE(n_components=dimension).fit_transform(df)
-        if target == "Outcome":
-            y_hat = y_hat.detach().numpy()[0][:,0].flatten().tolist()
-        else:
-            y_hat = y_hat.detach().numpy()[0][:,1].flatten().tolist()   
-        if dimension == 2:  # 判断降维维度
-            df_subset = pd.DataFrame(
-                {
-                    "2d-one": reduction_model[:, 0],
-                    "2d-two": reduction_model[:, 1],
-                    "target": y_hat,
-                }
-            )
-            return list(zip([df_subset["2d-one"].tolist(), df_subset["2d-two"].tolist(), df_subset["target"].tolist()]))
-        elif dimension == 3:
-            df_subset = pd.DataFrame(
-                {
-                    "3d-one": reduction_model[:, 0],
-                    "3d-two": reduction_model[:, 1],
-                    "3d-three": reduction_model[:, 2],
-                    "target": y_hat,
-                }
-            )
-            return list(zip([df_subset["3d-one"].tolist(), df_subset["3d-two"].tolist(), df_subset["3d-three"].tolist(), df_subset["target"].tolist()]))
+    def data_dimension_reduction(self,method,dimension,target)-> List:
+        x = pd.read_pickle('datasets/train_x.pkl')
+        y = pd.read_pickle('datasets/train_pid.pkl')
+        z = pd.read_pickle('datasets/train_record_time.pkl')
+        mean = pd.read_pickle('datasets/train_mean.pkl')
+        std = pd.read_pickle('datasets/train_std.pkl')
+        mean=mean['Age']
+        std=std['Age']
+        num = len(x)
+        patients = []
+        for i in range(num):
+            xi = torch.tensor(x[i]).unsqueeze(0)
+            yi = torch.tensor(y[i]).unsqueeze(0)
+            zi = z[i]
+            config = self.pipeline.config
+            pipeline = DlPipeline(config)
+            pipeline = pipeline.load_from_checkpoint(self.model_path)
+            y_hat, embedding, scores = pipeline.predict_step(xi)
+            embedding = embedding.detach().numpy().squeeze()
+            df = pd.DataFrame(embedding)
+            if method == "PCA":  # 判断降维类别
+                reduction_model = PCA().fit_transform(df)
+            elif method == "TSNE":
+                reduction_model = TSNE(n_components=dimension).fit_transform(df)
+            if(reduction_model.shape[0]!=reduction_model.shape[1]):
+                continue
+            y_hat=y_hat.detach().numpy().squeeze()
+            if target == "Outcome":
+                y_hat = y_hat[:,0].flatten().tolist()
+            else:
+                y_hat = y_hat[:,1].flatten().tolist()   
+            result={}
+            if dimension == 2:  # 判断降维维度
+                result['list']=[list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]
+            elif dimension == 3:
+                result['list']=[list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]
+            result['PatientID']=yi.item()
+            result['RecordTime']=[str(x) for x in zi]
+            result['Age']=xi[0][0][1].item()*std+mean
+            patients.append(result)
+        return patients
