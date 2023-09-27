@@ -103,25 +103,25 @@ class DataHandler:
         return statistic_info
     
     def split_dataset(self, 
-            train: int = 70, 
-            val: int = 10, 
-            test: int = 20, 
+            train_size: int = 70, 
+            val_size: int = 10, 
+            test_size: int = 20, 
             seed: int = 42
         ) -> None:
         """
         Split the dataset into train/val/test sets.
 
         Args:
-            train: int.
+            train_size: int.
                 train set percentage.
-            val: int.
+            val_size: int.
                 val set percentage.
-            test: int.
+            test_size: int.
                 test set percentage.
             seed: int.
                 random seed.
         """
-        assert train + val + test == 100, "train + val + test must equal to 100"
+        assert train_size + val_size + test_size == 100, "train_size + val_size + test_size must equal to 100"
 
         # Group the dataframe by patient ID
         grouped = self.merged_df.groupby('PatientID')
@@ -129,11 +129,11 @@ class DataHandler:
         
         # Get the train_val/test patient IDs
         patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in patients])
-        train_val_patients, test_patients = train_test_split(patients, test_size=test/(train+val+test), random_state=seed, stratify=patients_outcome)
+        train_val_patients, test_patients = train_test_split(patients, test_size=test_size/(train_size+val_size+test_size), random_state=seed, stratify=patients_outcome)
 
         # Get the train/val patient IDs
         train_val_patients_outcome = np.array([grouped.get_group(patient_id)['Outcome'].iloc[0] for patient_id in train_val_patients])
-        train_patients, val_patients = train_test_split(train_val_patients, test_size=val/(train+val), random_state=seed, stratify=train_val_patients_outcome)
+        train_patients, val_patients = train_test_split(train_val_patients, test_size=val_size/(train_size+val_size), random_state=seed, stratify=train_val_patients_outcome)
 
         #  Create train, val, test, [traincal, calib] dataframes for the current fold
         self.train_raw_df = self.merged_df[self.merged_df['PatientID'].isin(train_patients)]
@@ -189,20 +189,20 @@ class DataHandler:
         self.test_x, self.test_y, self.test_pid, self.test_missing_mask = forward_fill_pipeline(self.test_after_zscore, self.default_fill, demographic_features, labtest_features)
 
     def execute(self,
-            train: int = 70,
-            val: int = 10,
-            test: int = 20,
+            train_size: int = 70,
+            val_size: int = 10,
+            test_size: int = 20,
             seed: int = 42,
         ) -> None:
         """
         Execute the preprocessing pipeline, including split the dataset, normalize the dataset, and forward fill the dataset.
 
         Args:
-            train: int.
+            train_size: int.
                 train set percentage.
-            val: int.
+            val_size: int.
                 val set percentage.
-            test: int.
+            test_size: int.
                 test set percentage.
             seed: int.
                 random seed.
@@ -217,7 +217,7 @@ class DataHandler:
             labtest_features.remove('Age') 
 
         # Split the dataset
-        self.split_dataset(train, val, test, seed)
+        self.split_dataset(train_size, val_size, test_size, seed)
 
         # Save record time
         self.save_record_time()
