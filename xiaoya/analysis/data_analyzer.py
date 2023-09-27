@@ -48,6 +48,23 @@ class DataAnalyzer:
             mask: torch.Tensor,
             patientID: int,
         ) -> Dict:
+        """
+        Return data to draw risk curve of a patient.
+
+        Args:
+            df: pd.DataFrame.
+                the dataframe of the patient.
+            x: List.
+                the input of the patient.
+            mask: torch.Tensor.
+                the missing mask of the patient.
+            patientID: int.
+                the patient ID.
+
+        Returns:
+            Dict.
+                the data to draw risk curve.
+        """
 
         xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
