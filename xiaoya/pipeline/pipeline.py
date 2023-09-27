@@ -162,5 +162,6 @@ class Pipeline:
         """
 
         if model_path is None:
-            model_path = self.train()
+            self.train()
+            model_path = self.model_path
         return self.predict(model_path)
