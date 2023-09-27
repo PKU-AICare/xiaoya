@@ -1,5 +1,6 @@
 checkpoints/
 datasets/
+metrics/
 *.ipynb
 
 # Byte-compiled / optimized / DLL files
