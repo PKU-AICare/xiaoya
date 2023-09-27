@@ -4,6 +4,7 @@ from pathlib import Path
 import torch
 import lightning as L
 from lightning.pytorch.callbacks import EarlyStopping, ModelCheckpoint
+import pandas as pd
 
 from xiaoya.pyehr.dataloaders import EhrDataModule
 from xiaoya.pyehr.pipelines import DlPipeline
@@ -61,6 +62,7 @@ class Pipeline:
             seed: int = 42,
             data_path: Path = Path('./datasets'),
             ckpt_path: Path = Path('./checkpoints'),
+            metric_path: Path = Path('./metrics'),
             demographic_dim: int = 2,
             labtest_dim: int = 73
         ) -> None:
@@ -81,6 +83,7 @@ class Pipeline:
         }
         self.data_path = data_path
         self.ckpt_path = ckpt_path
+        self.metric_path = metric_path
         self.los_info = get_los_info(data_path)
         self.model_path = None
 
@@ -143,7 +146,12 @@ class Pipeline:
         trainer = L.Trainer(accelerator=accelerator, max_epochs=1, logger=False, num_sanity_val_steps=0)
         trainer.test(pipeline, datamodule=dm, ckpt_path=model_path)
 
-        return pipeline.test_performance
+        performance = {k: v.item() for k, v in pipeline.test_performance.items()}
+        ckpt_name = Path(model_path).name.replace('ckpt', 'csv')
+        metric_url = os.path.join(self.metric_path, self.config['task'], f'{self.config["model"]}-seed{self.config["seed"]}')
+        Path(metric_url).mkdir(parents=True, exist_ok=True)
+        pd.DataFrame(performance, index=[0]).to_csv(os.path.join(metric_url, ckpt_name), index=False)
+        return performance
 
     def execute(self, model_path: str = None):
         """
