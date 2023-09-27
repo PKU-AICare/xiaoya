@@ -1,5 +1,4 @@
-from typing import List
-import heapq
+from typing import List, Dict
 
 import torch
 import lightning as L
@@ -30,7 +29,10 @@ class DataAnalyzer:
         self.pipeline = pipeline
         self.model_path = model_path
 
-    def get_importance_scores(self, x) -> torch.Tensor:
+    def importance_scores(
+            self, 
+            x: torch.Tensor
+        ) -> Dict:
         config = self.pipeline.config
         config['model'] = 'MHAGRU'
     
@@ -38,6 +40,35 @@ class DataAnalyzer:
         pipeline = pipeline.load_from_checkpoint(self.model_path)
         _, _, scores = pipeline.predict_step(x)
         return scores
+    
+    def risk_curve(
+            self, 
+            df: pd.DataFrame,
+            x: List,
+            mask: torch.Tensor,
+            patientID: int,
+        ) -> Dict:
+
+        xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
+        x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        mask = mask[xid]                        # [ts, f]
+        scores = self.get_importance_scores(x.to('cuda:0'))
+        
+        record_times = list(item[1] for item in df[df['PatientID'] == patientID]['RecordTime'].items())
+        column_names = list(df.columns[6:])
+
+        return {
+            'detail': [{
+                'name': column_names[i],
+                'value': x[0][:, i],
+                'time_step_feature_importance': scores['time_step_feature_importance'][0][:, i],
+                'missing': mask[:, i],
+                'unit': ''
+            } for i in range(len(column_names))],
+            'time': record_times,   # ts
+            'feature_importance': scores['feature_importance'][0],      # f
+            'time_step_importance': scores['time_step_importance'][0],  # ts
+        }
     
     def feature_advice(self,
             input: torch.Tensor,
