@@ -87,12 +87,9 @@ class Pipeline:
         self.los_info = get_los_info(data_path)
         self.model_path = None
 
-    def train(self) -> str:
+    def train(self) -> None:
         """
         Train the model.
-
-        Returns:
-            str: the path of the best model.
         """
 
         main_metric = 'auprc' if self.config['task'] in ['outcome', 'multitask'] else 'mae'
