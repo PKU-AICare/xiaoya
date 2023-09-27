@@ -41,6 +41,32 @@ class DataAnalyzer:
         _, _, scores = pipeline.predict_step(x)
         return scores
     
+    def feature_importance(
+            self,
+            df: pd.DataFrame,
+            x: List,
+            patientID: int,
+        ) -> Dict:
+        """
+        Return feature importance of a patient.
+
+        Args:
+            df: pd.DataFrame.
+                the dataframe of the patient.
+            x: List.
+                the input of the patient.
+            patientID: int.
+                the patient ID.
+
+        Returns:
+            Dict.
+                the feature importance.
+        """
+
+        xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
+        x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        return self.importance_scores(x.to('cuda:0'))
+
     def risk_curve(
             self, 
             df: pd.DataFrame,
@@ -69,7 +95,7 @@ class DataAnalyzer:
         xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         mask = mask[xid]                        # [ts, f]
-        scores = self.get_importance_scores(x.to('cuda:0'))
+        scores = self.importance_scores(x.to('cuda:0'))
         
         record_times = list(item[1] for item in df[df['PatientID'] == patientID]['RecordTime'].items())
         column_names = list(df.columns[6:])
