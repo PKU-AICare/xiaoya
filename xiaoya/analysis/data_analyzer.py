@@ -1,4 +1,4 @@
-from typing import List, Dict
+from typing import List, Dict, Tuple, Union, Optional, Any
 
 import torch
 import lightning as L
@@ -152,14 +152,19 @@ class DataAnalyzer:
             result.append(res.x[0])
         return result
 
-    def data_dimension_reduction(self,method,dimension,target)-> List:
+    def data_dimension_reduction(
+            self,
+            method: str = "PCA" | "TSNE",
+            dimension: int = 2 | 3,
+            target: str = "outcome" | "los" | "multitask",
+        )-> List:
         x = pd.read_pickle('datasets/train_x.pkl')
         y = pd.read_pickle('datasets/train_pid.pkl')
         z = pd.read_pickle('datasets/train_record_time.pkl')
         mean = pd.read_pickle('datasets/train_mean.pkl')
         std = pd.read_pickle('datasets/train_std.pkl')
-        mean=mean['Age']
-        std=std['Age']
+        mean = mean['Age']
+        std = std['Age']
         num = len(x)
         patients = []
         for i in range(num):
@@ -176,20 +181,22 @@ class DataAnalyzer:
                 reduction_model = PCA().fit_transform(df)
             elif method == "TSNE":
                 reduction_model = TSNE(n_components=dimension).fit_transform(df)
-            if(reduction_model.shape[0]!=reduction_model.shape[1]):
+            if(reduction_model.shape[0] != reduction_model.shape[1]):
                 continue
             y_hat=y_hat.detach().numpy().squeeze()
             if target == "Outcome":
                 y_hat = y_hat[:,0].flatten().tolist()
             else:
                 y_hat = y_hat[:,1].flatten().tolist()   
+            
             result={}
             if dimension == 2:  # 判断降维维度
-                result['list']=[list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]
+                result['list'] = [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]
             elif dimension == 3:
-                result['list']=[list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]
-            result['PatientID']=yi.item()
-            result['RecordTime']=[str(x) for x in zi]
-            result['Age']=xi[0][0][1].item()*std+mean
+                result['list'] = [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]
+            result['PatientID'] = yi.item()
+            result['RecordTime'] = [str(x) for x in zi]
+            result['Age'] = xi[0][0][1].item() * std + mean
             patients.append(result)
         return patients
+    
