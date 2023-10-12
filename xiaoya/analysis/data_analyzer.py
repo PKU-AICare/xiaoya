@@ -1,7 +1,6 @@
-from typing import List, Dict, Tuple, Union, Optional, Any
+from typing import List, Dict 
 
 import torch
-import lightning as L
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
@@ -154,10 +153,19 @@ class DataAnalyzer:
 
     def data_dimension_reduction(
             self,
-            method: str = "PCA" | "TSNE",
-            dimension: int = 2 | 3,
-            target: str = "outcome" | "los" | "multitask",
+            method: str = "PCA",
+            dimension: int = 2,
+            target: str = "multitask",
         )-> List:
+        """
+        
+        Args:
+            method: one of {"PCA", "TSNE"}.
+            dimension: one of {2, 3}.
+            target: one of {"multitask", "los", "outcome"}.
+
+        
+        """
         x = pd.read_pickle('datasets/train_x.pkl')
         y = pd.read_pickle('datasets/train_pid.pkl')
         z = pd.read_pickle('datasets/train_record_time.pkl')
@@ -168,14 +176,14 @@ class DataAnalyzer:
         num = len(x)
         patients = []
         for i in range(num):
-            xi = torch.tensor(x[i]).unsqueeze(0)
+            xi = torch.tensor(x[i]).unsqueeze(0).to('cuda:0')   # cuda
             yi = torch.tensor(y[i]).unsqueeze(0)
             zi = z[i]
             config = self.pipeline.config
             pipeline = DlPipeline(config)
             pipeline = pipeline.load_from_checkpoint(self.model_path)
             y_hat, embedding, scores = pipeline.predict_step(xi)
-            embedding = embedding.detach().numpy().squeeze()
+            embedding = embedding.cpu().detach().numpy().squeeze()  # cpu
             df = pd.DataFrame(embedding)
             if method == "PCA":  # 判断降维类别
                 reduction_model = PCA().fit_transform(df)
@@ -183,11 +191,11 @@ class DataAnalyzer:
                 reduction_model = TSNE(n_components=dimension).fit_transform(df)
             if(reduction_model.shape[0] != reduction_model.shape[1]):
                 continue
-            y_hat=y_hat.detach().numpy().squeeze()
-            if target == "Outcome":
-                y_hat = y_hat[:,0].flatten().tolist()
+            y_hat = y_hat.cpu().detach().numpy().squeeze()      # cpu
+            if target == "outcome":
+                y_hat = y_hat[:, 0].flatten().tolist()
             else:
-                y_hat = y_hat[:,1].flatten().tolist()   
+                y_hat = y_hat[:, 1].flatten().tolist()   
             
             result={}
             if dimension == 2:  # 判断降维维度
