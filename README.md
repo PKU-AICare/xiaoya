@@ -10,6 +10,7 @@ xiaoya/ # root
     data/ # import user uploaded data, merge data tables, stats...
     pipeline/ # model training and evaluation, ...
     analysis/ # analysis modules
+    plot/ # plot modules
 ```
 
 ## TODOs
