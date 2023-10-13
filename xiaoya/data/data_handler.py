@@ -157,7 +157,7 @@ class DataHandler:
             feats.remove('PatientID')
             feats.remove('RecordTime')
         self.raw_features[format] = feats
-        return feats
+        return {'detail': feats}
 
     def analyze_dataset(self) -> Dict:
         """
