@@ -169,13 +169,11 @@ class DataAnalyzer:
 
         
         """
-        x = pd.read_pickle('datasets/train_x.pkl')
-        y = pd.read_pickle('datasets/train_pid.pkl')
-        z = pd.read_pickle('datasets/train_record_time.pkl')
-        mean = pd.read_pickle('datasets/train_mean.pkl')
-        std = pd.read_pickle('datasets/train_std.pkl')
-        mean = mean['Age']
-        std = std['Age']
+        x = pd.read_pickle('datasets/test_x.pkl')
+        y = pd.read_pickle('datasets/test_pid.pkl')
+        z = pd.read_pickle('datasets/test_record_time.pkl')
+        # mean = pd.read_pickle('datasets/test_mean.pkl')['Age']
+        # std = pd.read_pickle('datasets/test_std.pkl')['Age']
         num = len(x)
         patients = []
         for i in range(num):
@@ -200,14 +198,15 @@ class DataAnalyzer:
             else:
                 y_hat = y_hat[:, 1].flatten().tolist()   
             
-            result={}
+            patient = []
             if dimension == 2:  # 判断降维维度
-                result['list'] = [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]
+                patient.append({'name': 'list', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]})
             elif dimension == 3:
-                result['list'] = [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]
-            result['PatientID'] = yi.item()
-            result['RecordTime'] = [str(x) for x in zi]
-            result['Age'] = xi[0][0][1].item() * std + mean
-            patients.append(result)
-        return patients
+                patient.append({'name': 'list', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]})
+            patient.append({'name': 'patient_id', 'value': yi.item()})
+            patient.append({'name': 'record_time', 'value': [str(x) for x in zi]})
+            # result['Age'] = xi[0][0][1].item() * std + mean
+            # patient.append({'name': 'age', 'value': xi[0][0][1].item() * std + mean})
+            patients.append(patient)
+        return {'detail': patients}
     
