@@ -6,11 +6,6 @@ import pandas as pd
 import numpy as np
 from sklearn.model_selection import train_test_split
 
-from .raw_files_utils import (
-    get_features,
-    to_dataframe,
-    merge_dfs
-)
 from .processed_datasets_utils import (
     normalize_dataframe,
     forward_fill_pipeline,
@@ -37,43 +32,131 @@ class DataHandler:
             events_data: pd.DataFrame,
             target_data: pd.DataFrame,
             data_path: Path = Path('./datasets'),
-            save_processed_data: bool = False
         ) -> None:
 
-        self.labtest_df = pd.DataFrame(labtest_data)
-        self.events_df = pd.DataFrame(events_data)
-        self.target_df = pd.DataFrame(target_data)
-
-
-        self.labtest_standard_df = to_dataframe(self.labtest_df, 'labtest')
-        self.events_standard_df = to_dataframe(self.events_df, 'events')
-        self.target_standard_df = to_dataframe(self.target_df, 'target')
-        self.merged_df = merge_dfs(
-            self.labtest_standard_df,
-            self.events_standard_df,
-            self.target_standard_df
-        )
+        self.raw_df = {
+            'labtest': pd.DataFrame(labtest_data),
+            'events': pd.DataFrame(events_data),
+            'target': pd.DataFrame(target_data),
+        }
+        self.raw_features = {}
+        self.standard_df = {}
+        self.merged_df = None
         self.data_path = data_path
-        if save_processed_data:
-            data_path.mkdir(parents=True, exist_ok=True)
-            self.labtest_standard_df.to_csv(os.path.join(data_path, 'labtest_standard_data.csv'), index=False)
-            self.events_standard_df.to_csv(os.path.join(data_path, 'events_standard_data.csv'), index=False)
-            self.target_standard_df.to_csv(os.path.join(data_path, 'target_standard_data.csv'), index=False)
-            self.merged_df.to_csv(os.path.join(data_path, 'merged_standard_data.csv'), index=False)
 
-    def extract_features(self) -> Dict:
+    def format_dataframe(
+            self, 
+            df: pd.DataFrame, 
+            format: str,
+        ) -> pd.DataFrame:
+        """
+        Formats the data in the DataFrame according to the specified format.
+        
+        Args:
+            df: DataFrame.
+                The DataFrame to format.
+            format: str. 
+                The format to use for formatting the data.
+        
+        Returns:
+            pd.DataFrame: The formatted DataFrame.
+        """
+        
+        assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
+
+        if format == 'target':
+            df = df.drop_duplicates(subset=['PatientID', 'RecordTime'], keep='last')
+        else:
+            df = df.drop_duplicates(subset=['PatientID', 'RecordTime', 'Name'], keep='last')
+            columns = ['PatientID', 'RecordTime'] + list(df['Name'].dropna().unique())
+            df_new = pd.DataFrame(data=None, columns=columns)
+            grouped = df.groupby(['PatientID', 'RecordTime'])
+            for i, group in enumerate(grouped):
+                patient_id, record_time = group[0]
+                df_group = group[1]
+                df_new.loc[i, 'PatientID'] = patient_id
+                df_new.loc[i, 'RecordTime'] = record_time
+                for _, row in df_group.iterrows():
+                    df_new.loc[i, row['Name']] = row['Value']
+            df = df_new
+
+        df['RecordTime'] = pd.to_datetime(df['RecordTime'])
+        df.sort_values(by=['PatientID', 'RecordTime'], inplace=True)
+        self.standard_df[format] = df
+        return df
+
+    def merge_dataframes(
+            self,
+            labtest_standard_df: pd.DataFrame,
+            events_standard_df: pd.DataFrame,
+            target_standard_df: pd.DataFrame,
+        ) -> pd.DataFrame:
+        """
+        Merge the dataframes.
+
+        Args:
+            labtest_standard_df: DataFrame.
+                labtest dataframe in standard format.
+            events_standard_df: DataFrame.
+                events dataframe in standard format.
+            target_standard_df: DataFrame.
+                target dataframe in standard format.
+
+        Returns:
+            merged_df: DataFrame.
+                merged dataframe.
+        """
+
+        df = labtest_standard_df 
+        df = pd.merge(df, events_standard_df, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
+        df = pd.merge(df, target_standard_df, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
+        
+        # Forward fill events.
+        for col in events_standard_df.columns.tolist():
+            df[col] = df[col].fillna(method='ffill')
+
+        # Change the order of columns.
+        cols = ['PatientID', 'RecordTime', 'Outcome', 'LOS', 'Sex', 'Age']
+        all_cols = df.columns.tolist()
+        for col in cols:
+            all_cols.remove(col) if col in all_cols else None
+        all_cols = cols + all_cols
+        merged_df = df[all_cols]
+        self.merged_df = merged_df
+        return merged_df
+
+    def save_processed_data(self, data_path) -> None:
+        data_path.mkdir(parents=True, exist_ok=True)
+        self.labtest_standard_df.to_csv(os.path.join(data_path, 'labtest_standard_data.csv'), index=False)
+        self.events_standard_df.to_csv(os.path.join(data_path, 'events_standard_data.csv'), index=False)
+        self.target_standard_df.to_csv(os.path.join(data_path, 'target_standard_data.csv'), index=False)
+        self.merged_df.to_csv(os.path.join(data_path, 'merged_standard_data.csv'), index=False)
+
+    def extract_features(
+            self, 
+            df: pd.DataFrame, 
+            format: str,
+        ) -> Dict:
         """
         Extract features from the merged dataframe.
 
+        Args:
+            df: DataFrame.
+            format: str.
+                'labtest' or 'events' or 'target'.
+        
         Returns:
-            feats: Dict.
+            Dict:
                 features.
         """
 
-        feats = {}
-        feats['labtest_features'] = get_features(self.labtest_df, 'labtest')
-        feats['events_features'] = get_features(self.events_df, 'events')
-        feats['target_features'] = get_features(self.target_df, 'target')
+        if format in ['labtest', 'events']:
+            feats = df['Name'].dropna().unique().tolist()
+        else:
+            feats = df.columns.tolist()
+            feats.remove('PatientID')
+            feats.remove('RecordTime')
+        self.raw_features[format] = feats
         return feats
 
     def analyze_dataset(self) -> List:
