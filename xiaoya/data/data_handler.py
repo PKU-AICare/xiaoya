@@ -159,31 +159,30 @@ class DataHandler:
         self.raw_features[format] = feats
         return feats
 
-    def analyze_dataset(self) -> List:
+    def analyze_dataset(self) -> Dict:
         """
         Analyze the dataset.
 
         Returns:
-            statistic_info: List.
-                statistic information of the dataset.
+            Dict.
+                The main data in 'detail' is a List of imformation of all features.
         """
         
-        len_df = len(self.merged_df.index)
-        features = self.extract_features()
-        statistic_info = []
-        for idx, e in enumerate(['PatientID'] + features['target_features'] + features['events_features'] + features['labtest_features']):
-            h = {}
-            h["id"] = idx
-            h["name"] = e
-            h["count"] = int(self.merged_df[e].count())
-            h["missing"] = str(round(float((100 - self.merged_df[e].count() * 100 / len_df)), 2)) + "%"
-            h["mean"] = round(float(self.merged_df[e].mean()), 2)
-            h["max"] = round(float(self.merged_df[e].max()), 2)
-            h["min"] = round(float(self.merged_df[e].min()), 2)
-            h["median"] = round(float(self.merged_df[e].median()), 2)
-            h["std"] = round(float(self.merged_df[e].std()), 2)
-            statistic_info.append(h)
-        return statistic_info
+        detail = []
+        for idx, feature in enumerate(['PatientID'] + self.raw_features['target'] + self.raw_features['events'] + self.raw_features['labtest']):
+            info = {}
+            info["feature"] = feature
+            info["stats"] = []
+            info["stats"].append({"name": "id", "value": idx})
+            info["stats"].append({"name": "count", "value": int(self.merged_df[feature].count())})
+            info["stats"].append({"name": "missing", "value": str(round(float((100 - self.merged_df[feature].count() * 100 / len(self.merged_df.index))), 2)) + "%"})
+            info["stats"].append({"name": "mean", "value": round(float(self.merged_df[feature].mean()), 2)})
+            info["stats"].append({"name": "max", "value": round(float(self.merged_df[feature].max()), 2)})
+            info["stats"].append({"name": "min", "value": round(float(self.merged_df[feature].min()), 2)})
+            info["stats"].append({"name": "median", "value": round(float(self.merged_df[feature].median()), 2)})
+            info["stats"].append({"name": "std", "value": round(float(self.merged_df[feature].std()), 2)})
+            detail.append(info)
+        return {'detail': detail}
     
     def split_dataset(self, 
             train_size: int = 70, 
