@@ -46,15 +46,12 @@ class DataHandler:
 
     def format_dataframe(
             self, 
-            df: pd.DataFrame, 
             format: str,
         ) -> pd.DataFrame:
         """
         Formats the data in the DataFrame according to the specified format.
         
         Args:
-            df: DataFrame.
-                The DataFrame to format.
             format: str. 
                 The format to use for formatting the data, must be one of ['labtest', 'events', 'target'].
         
@@ -63,6 +60,7 @@ class DataHandler:
         """
         assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
 
+        df = self.raw_df[format]
         if format == 'target':
             df = df.drop_duplicates(subset=['PatientID', 'RecordTime'], keep='last')
         else:
@@ -139,14 +137,12 @@ class DataHandler:
 
     def extract_features(
             self, 
-            df: pd.DataFrame, 
             format: str,
         ) -> Dict:
         """
         Extract features from the merged dataframe.
 
         Args:
-            df: DataFrame.
             format: str.
                 'labtest' or 'events' or 'target'.
         
@@ -155,6 +151,9 @@ class DataHandler:
                 features.
         """
         assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
+
+        df = self.standard_df[format]
+        assert df is not None, "Please format the dataframe first."
 
         if format in ['labtest', 'events']:
             feats = df['Name'].dropna().unique().tolist()
