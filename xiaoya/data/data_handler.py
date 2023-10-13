@@ -124,8 +124,14 @@ class DataHandler:
         self.merged_df = merged_df
         return merged_df
 
-    def save_processed_data(self, data_path) -> None:
-        data_path.mkdir(parents=True, exist_ok=True)
+    def save_processed_data(self, data_path: str) -> None:
+        """
+        Save processed data to specified directory.
+
+        Args:
+            data_path (str): The path to the directory where the processed data will be saved.
+        """
+        Path(data_path).mkdir(parents=True, exist_ok=True)
         self.standard_df['labtest'].to_csv(os.path.join(data_path, 'labtest_standard_data.csv'), index=False)
         self.standard_df['events'].to_csv(os.path.join(data_path, 'events_standard_data.csv'), index=False)
         self.standard_df['target'].to_csv(os.path.join(data_path, 'target_standard_data.csv'), index=False)
