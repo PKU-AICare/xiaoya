@@ -38,6 +38,9 @@ class DataAnalyzer:
         pipeline = DlPipeline(config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
         _, _, scores = pipeline.predict_step(x)
+
+        for key in scores:
+            scores[key] = scores[key].cpu().detach().numpy() if isinstance(scores[key], torch.Tensor) else scores[key]
         return scores
     
     def feature_importance(
@@ -182,7 +185,7 @@ class DataAnalyzer:
             config = self.pipeline.config
             pipeline = DlPipeline(config)
             pipeline = pipeline.load_from_checkpoint(self.model_path)
-            y_hat, embedding, scores = pipeline.predict_step(xi)
+            y_hat, embedding, _ = pipeline.predict_step(xi)
             embedding = embedding.cpu().detach().numpy().squeeze()  # cpu
             df = pd.DataFrame(embedding)
             if method == "PCA":  # 判断降维类别
