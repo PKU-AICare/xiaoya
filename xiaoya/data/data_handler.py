@@ -56,12 +56,11 @@ class DataHandler:
             df: DataFrame.
                 The DataFrame to format.
             format: str. 
-                The format to use for formatting the data.
+                The format to use for formatting the data, must be one of ['labtest', 'events', 'target'].
         
         Returns:
             pd.DataFrame: The formatted DataFrame.
         """
-        
         assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
 
         if format == 'target':
@@ -127,9 +126,9 @@ class DataHandler:
 
     def save_processed_data(self, data_path) -> None:
         data_path.mkdir(parents=True, exist_ok=True)
-        self.labtest_standard_df.to_csv(os.path.join(data_path, 'labtest_standard_data.csv'), index=False)
-        self.events_standard_df.to_csv(os.path.join(data_path, 'events_standard_data.csv'), index=False)
-        self.target_standard_df.to_csv(os.path.join(data_path, 'target_standard_data.csv'), index=False)
+        self.standard_df['labtest'].to_csv(os.path.join(data_path, 'labtest_standard_data.csv'), index=False)
+        self.standard_df['events'].to_csv(os.path.join(data_path, 'events_standard_data.csv'), index=False)
+        self.standard_df['target'].to_csv(os.path.join(data_path, 'target_standard_data.csv'), index=False)
         self.merged_df.to_csv(os.path.join(data_path, 'merged_standard_data.csv'), index=False)
 
     def extract_features(
@@ -149,6 +148,7 @@ class DataHandler:
             Dict:
                 features.
         """
+        assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
 
         if format in ['labtest', 'events']:
             feats = df['Name'].dropna().unique().tolist()
