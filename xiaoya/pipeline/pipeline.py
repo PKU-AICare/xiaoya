@@ -169,20 +169,4 @@ class Pipeline:
             self.train()
             model_path = self.model_path
         return self.predict(model_path)
-
-    def get_history(self) -> List[Tuple[str, str, float]]:
-        """
-        Get the history of the model.
-
-        Returns:
-            dict: the history of the model.
-        """
-
-        ckpt_dir = os.listdir(self.ckpt_path)
-        metric_dir = os.listdir(self.metric_path)
-
-        result = []
-        for item in zip(ckpt_dir, metric_dir, os.path.getctime(os.path.join(self.ckpt_path, item[0]))):
-            result.append(item)
-        return result
     
