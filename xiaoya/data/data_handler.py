@@ -82,27 +82,20 @@ class DataHandler:
         self.standard_df[format] = df
         return df
 
-    def merge_dataframes(
-            self,
-            labtest_standard_df: pd.DataFrame,
-            events_standard_df: pd.DataFrame,
-            target_standard_df: pd.DataFrame,
-        ) -> pd.DataFrame:
+    def merge_dataframes(self) -> pd.DataFrame:
         """
         Merge the dataframes.
-
-        Args:
-            labtest_standard_df: DataFrame.
-                labtest dataframe in standard format.
-            events_standard_df: DataFrame.
-                events dataframe in standard format.
-            target_standard_df: DataFrame.
-                target dataframe in standard format.
 
         Returns:
             merged_df: DataFrame.
                 merged dataframe.
         """
+        labtest_standard_df = self.standard_df['labtest'] 
+        events_standard_df = self.standard_df['events']
+        target_standard_df = self.standard_df['target']
+
+        assert labtest_standard_df is not None and events_standard_df is not None and target_standard_df is not None, \
+        "Please format all dataframes first."
 
         df = labtest_standard_df 
         df = pd.merge(df, events_standard_df, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
@@ -153,7 +146,7 @@ class DataHandler:
         assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
 
         df = self.standard_df[format]
-        assert df is not None, "Please format the dataframe first."
+        assert df is not None, f"Please format the {format} dataframe first."
 
         if format in ['labtest', 'events']:
             feats = df['Name'].dropna().unique().tolist()
