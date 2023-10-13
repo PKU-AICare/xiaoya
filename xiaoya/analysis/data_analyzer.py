@@ -200,9 +200,9 @@ class DataAnalyzer:
             
             patient = []
             if dimension == 2:  # 判断降维维度
-                patient.append({'name': 'list', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]})
+                patient.append({'name': 'data', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]})
             elif dimension == 3:
-                patient.append({'name': 'list', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]})
+                patient.append({'name': 'data', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]})
             patient.append({'name': 'patient_id', 'value': yi.item()})
             patient.append({'name': 'record_time', 'value': [str(x) for x in zi]})
             # result['Age'] = xi[0][0][1].item() * std + mean
