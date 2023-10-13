@@ -149,7 +149,13 @@ class Pipeline:
         metric_url = os.path.join(self.metric_path, self.config['task'], f'{self.config["model"]}-seed{self.config["seed"]}')
         Path(metric_url).mkdir(parents=True, exist_ok=True)
         pd.DataFrame(performance, index=[0]).to_csv(os.path.join(metric_url, ckpt_name), index=False)
-        return performance
+
+        output = pipeline.test_outputs
+        return {'detail': {
+            'preds': output['preds'],
+            'labels': output['labels'],
+            'config': self.config,
+        }}
 
     def execute(self, model_path: str = None):
         """
