@@ -90,9 +90,9 @@ class DataHandler:
             merged_df: DataFrame.
                 merged dataframe.
         """
-        labtest_standard_df = self.standard_df['labtest'] 
-        events_standard_df = self.standard_df['events']
-        target_standard_df = self.standard_df['target']
+        labtest_standard_df: pd.DataFrame = self.standard_df['labtest'] 
+        events_standard_df: pd.DataFrame = self.standard_df['events']
+        target_standard_df: pd.DataFrame = self.standard_df['target']
 
         assert labtest_standard_df is not None and events_standard_df is not None and target_standard_df is not None, \
         "Please format all dataframes first."
@@ -101,10 +101,6 @@ class DataHandler:
         df = pd.merge(df, events_standard_df, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
         df = pd.merge(df, target_standard_df, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
         
-        # Forward fill events.
-        for col in events_standard_df.columns.tolist():
-            df[col] = df[col].fillna(method='ffill')
-
         # Change the order of columns.
         cols = ['PatientID', 'RecordTime', 'Outcome', 'LOS', 'Sex', 'Age']
         all_cols = df.columns.tolist()
@@ -145,9 +141,7 @@ class DataHandler:
         """
         assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
 
-        df = self.standard_df[format]
-        assert df is not None, f"Please format the {format} dataframe first."
-
+        df: pd.DataFrame = self.raw_df[format]
         if format in ['labtest', 'events']:
             feats = df['Name'].dropna().unique().tolist()
         else:
@@ -155,7 +149,7 @@ class DataHandler:
             feats.remove('PatientID')
             feats.remove('RecordTime')
         self.raw_features[format] = feats
-        return {'detail': feats}
+        return feats
 
     def analyze_dataset(self) -> Dict:
         """
