@@ -161,13 +161,16 @@ class DataAnalyzer:
             target: str = "multitask",
         )-> List:
         """
-        
+        Return data to draw dimension reduction.
+
         Args:
             method: one of {"PCA", "TSNE"}.
             dimension: one of {2, 3}.
             target: one of {"multitask", "los", "outcome"}.
 
-        
+        Returns:
+            List.
+                the data to draw dimension reduction.        
         """
         x = pd.read_pickle('datasets/test_x.pkl')
         y = pd.read_pickle('datasets/test_pid.pkl')
