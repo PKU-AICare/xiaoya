@@ -115,7 +115,7 @@ class DataAnalyzer:
             'time_step_importance': scores['time_step_importance'][0],  # ts
         }
     
-    def feature_advice(self,
+    def ai_advice(self,
             input: torch.Tensor,
             time_index: int,
         ) -> List:
