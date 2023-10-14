@@ -163,7 +163,8 @@ class DataHandler:
         detail = []
         for idx, feature in enumerate(['PatientID'] + self.raw_features['target'] + self.raw_features['events'] + self.raw_features['labtest']):
             info = {}
-            info["feature"] = feature
+            info["name"] = feature
+            info["value"] = list(self.merged_df[feature])
             info["stats"] = []
             info["stats"].append({"name": "id", "value": idx})
             info["stats"].append({"name": "count", "value": int(self.merged_df[feature].count())})
