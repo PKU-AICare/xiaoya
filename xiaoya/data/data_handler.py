@@ -161,7 +161,9 @@ class DataHandler:
         """
         
         detail = []
-        for idx, feature in enumerate(['PatientID'] + self.raw_features['target'] + self.raw_features['events'] + self.raw_features['labtest']):
+        features = list(self.merged_df.columns)
+        features.remove('RecordTime') if 'RecordTime' in features else None
+        for idx, feature in enumerate(features):
             info = {}
             info["name"] = feature
             info["value"] = list(self.merged_df[feature])
