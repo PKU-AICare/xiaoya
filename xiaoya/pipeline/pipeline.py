@@ -1,6 +1,6 @@
 import os
 from pathlib import Path
-from typing import List, Tuple
+from typing import List, Tuple, Optional
 
 import torch
 import lightning as L
@@ -83,14 +83,23 @@ class Pipeline:
             'lab_dim': labtest_dim,
         }
         self.data_path = data_path
-        self.ckpt_path = ckpt_path
         self.metric_path = metric_path
         self.los_info = get_los_info(data_path)
         self.model_path = None
 
-    def train(self) -> None:
+    def train(
+            self, 
+            ckpt_path: str = './checkpoints',
+            ckpt_name: str = 'best',    
+        ) -> None:
         """
         Train the model.
+
+        Args:
+            ckpt_path: str.
+                the path to save the checkpoints, default is './checkpoints'.
+            ckpt_name: str.
+                the name of the checkpoint file, default is 'best'.
         """
 
         main_metric = 'auprc' if self.config['task'] in ['outcome', 'multitask'] else 'mae'
@@ -102,12 +111,12 @@ class Pipeline:
         dm = EhrDataModule(data_path=self.data_path, batch_size=self.config['batch_size'])
 
         # checkpoint
-        ckpt_url = os.path.join(self.ckpt_path, self.config['task'], f'{self.config["model"]}-seed{self.config["seed"]}')
+        ckpt_url = os.path.join(ckpt_path, self.config['task'], f'{self.config["model"]}-seed{self.config["seed"]}')
 
         # EarlyStop and checkpoint callback
         early_stopping_callback = EarlyStopping(monitor=main_metric, patience=self.config['patience'], mode=mode)
-        checkpoint_callback = ModelCheckpoint(monitor=main_metric, mode=mode, dirpath=ckpt_url, 
-                                        filename='best')
+        checkpoint_callback = ModelCheckpoint(monitor=main_metric, mode=mode, dirpath=ckpt_url, filename=ckpt_name)
+        
         # seed
         L.seed_everything(self.config['seed'])
 
