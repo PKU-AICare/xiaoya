@@ -286,9 +286,11 @@ class DataHandler:
         """
         
         data_path = self.data_path
-        features = self.extract_features()
-        demographic_features: List = features['events_features']
-        labtest_features: List = features['labtest_features']
+        self.extract_features('labtest')
+        self.extract_features('events')
+        self.extract_features('target')
+        demographic_features: List = self.raw_features['events']
+        labtest_features: List = self.raw_features['labtest']
         if 'Age' in labtest_features:
             demographic_features.append('Age')
             labtest_features.remove('Age') 
