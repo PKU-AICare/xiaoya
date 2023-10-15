@@ -150,7 +150,7 @@ def save_record_time(
     all_record_time = []
     for _, group in grouped:
         sorted_group = group.sort_values(by=['RecordTime'], ascending=True)
-        record_time = sorted_group['RecordTime'].values
+        record_time = sorted_group['RecordTime'].astype(int).values
         all_record_time.append(record_time)
     return all_record_time
 
