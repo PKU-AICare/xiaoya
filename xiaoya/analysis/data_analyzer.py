@@ -67,7 +67,14 @@ class DataAnalyzer:
 
         xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        return self.importance_scores(x.to('cuda:0'))
+        scores = self.importance_scores(x.to('cuda:0'))
+        column_names = list(df.columns[6:])
+        return {
+            'detail': {
+                'name': column_names,
+                'value': scores['feature_importance'][0],   # feature importance value
+            }
+        }
 
     def risk_curve(
             self, 
@@ -111,7 +118,6 @@ class DataAnalyzer:
                 'unit': ''
             } for i in range(len(column_names))],
             'time': record_times,   # ts
-            'feature_importance': scores['feature_importance'][0],      # f
             'time_step_importance': scores['time_step_importance'][0],  # ts
         }
     
@@ -192,7 +198,7 @@ class DataAnalyzer:
             if method == "PCA":  # 判断降维类别
                 reduction_model = PCA().fit_transform(df)
             elif method == "TSNE":
-                reduction_model = TSNE(n_components=dimension).fit_transform(df)
+                reduction_model = TSNE(n_components=dimension, learning_rate='auto', init='random').fit_transform(df)
             if(reduction_model.shape[0] != reduction_model.shape[1]):
                 continue
             y_hat = y_hat.cpu().detach().numpy().squeeze()      # cpu
