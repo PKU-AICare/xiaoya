@@ -107,7 +107,7 @@ class DataAnalyzer:
         scores = self.importance_scores(x.to('cuda:0'))
         
         record_times = list(item[1] for item in df[df['PatientID'] == patientID]['RecordTime'].items())
-        column_names = list(df.columns[6:])
+        column_names = list(df.columns[4:])
 
         return {
             'detail': [{
@@ -119,6 +119,7 @@ class DataAnalyzer:
             } for i in range(len(column_names))],
             'time': record_times,   # ts
             'time_step_importance': scores['time_step_importance'][0],  # ts
+            'feature importance': scores['feature importance'][0],
         }
     
     def ai_advice(self,
