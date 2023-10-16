@@ -6,6 +6,10 @@ import seaborn as sns
 
 
 class Plot:
+    """
+    Plot tools.
+
+    """
 
     def __init__(self) -> None:
         pass
@@ -49,6 +53,8 @@ class Plot:
                 Path to save the plot.
             feature_num: int.
                 Number of features to plot, default 10.
+            file_name: str.
+                File name of the plot.
         """
 
         importance = dict(zip(data['name'], data['value']))
@@ -73,6 +79,17 @@ class Plot:
             file_name: str='risk_curve',
         ) -> None:
         """
+        Plot the risk curve of a patient.
+
+        Args:
+            data: Dict.
+                Data to plot.
+            save_path: str.
+                Path to save the plot.
+            feature_num: int.
+                Number of features to plot, default 3.
+            file_name: str.
+                File name of the plot.
         """
 
         detail = data['detail']
