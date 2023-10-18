@@ -151,6 +151,19 @@ class DataHandler:
         self.raw_features[format] = feats
         return feats
 
+    def list_all_features(self) -> Dict:
+        """
+        List all features.
+
+        Returns:
+            Dict:
+                features.
+        """
+        features = {}
+        for format in ['labtest', 'events', 'target']:
+            features[format] = self.extract_features(format)
+        return features
+
     def analyze_dataset(self) -> Dict:
         """
         Analyze the dataset.
