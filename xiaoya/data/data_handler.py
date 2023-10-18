@@ -110,6 +110,20 @@ class DataHandler:
         merged_df = df[all_cols]
         self.merged_df = merged_df
         return merged_df
+    
+    def format_and_merge_dataframes(self) -> pd.DataFrame:
+        """
+        Format and merge the dataframes.
+
+        Returns:
+            merged_df: DataFrame.
+                merged dataframe.
+        """
+        self.format_dataframe('labtest')
+        self.format_dataframe('events')
+        self.format_dataframe('target')
+        merged_df = self.merge_dataframes()
+        return merged_df
 
     def save_processed_data(self, data_path: str) -> None:
         """
