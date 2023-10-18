@@ -22,8 +22,7 @@ class DataHandler:
         events_data: DataFrame.
         target_data: DataFrame.
         data_path: Path.
-            path to save processed data, default: Path('./datasets').
-
+            path to save processed data, default is Path('./datasets').
     """
 
     def __init__(
@@ -87,8 +86,7 @@ class DataHandler:
         Merge the dataframes.
 
         Returns:
-            merged_df: DataFrame.
-                merged dataframe.
+            pd.DataFrame: The merged Dataframe.
         """
         labtest_standard_df: pd.DataFrame = self.standard_df['labtest'] 
         events_standard_df: pd.DataFrame = self.standard_df['events']
@@ -116,8 +114,7 @@ class DataHandler:
         Format and merge the dataframes.
 
         Returns:
-            merged_df: DataFrame.
-                merged dataframe.
+            pd.DataFrame: The merged Dataframe.
         """
         self.format_dataframe('labtest')
         self.format_dataframe('events')
@@ -130,7 +127,8 @@ class DataHandler:
         Save processed data to specified directory.
 
         Args:
-            data_path (str): The path to the directory where the processed data will be saved.
+            data_path: str.
+                The path to the directory where the processed data will be saved.
         """
         Path(data_path).mkdir(parents=True, exist_ok=True)
         self.standard_df['labtest'].to_csv(os.path.join(data_path, 'labtest_standard_data.csv'), index=False)
@@ -150,8 +148,7 @@ class DataHandler:
                 'labtest' or 'events' or 'target'.
         
         Returns:
-            Dict:
-                features.
+            Dict: Extracted features from raw dataframe.
         """
         assert format in ['labtest', 'events', 'target'], "format must be one of ['labtest', 'events', 'target']"
 
@@ -170,8 +167,7 @@ class DataHandler:
         List all features.
 
         Returns:
-            Dict:
-                features.
+            Dict: All extracted features from raw dataframes.
         """
         features = {}
         for format in ['labtest', 'events', 'target']:
@@ -183,8 +179,7 @@ class DataHandler:
         Analyze the dataset.
 
         Returns:
-            Dict.
-                The main data in 'detail' is a List of imformation of all features.
+            Dict: The main data in 'detail' is a List of imformation of all features.
         """
         
         detail = []
