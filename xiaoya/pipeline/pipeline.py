@@ -62,8 +62,6 @@ class Pipeline:
             task: str = 'multitask',
             seed: int = 42,
             data_path: Path = Path('./datasets'),
-            ckpt_path: Path = Path('./checkpoints'),
-            metric_path: Path = Path('./metrics'),
             demographic_dim: int = 2,
             labtest_dim: int = 73
         ) -> None:
@@ -83,7 +81,6 @@ class Pipeline:
             'lab_dim': labtest_dim,
         }
         self.data_path = data_path
-        self.metric_path = metric_path
         self.los_info = get_los_info(data_path)
         self.model_path = None
 
@@ -128,7 +125,11 @@ class Pipeline:
         trainer.fit(pipeline, datamodule=dm)
         self.model_path = checkpoint_callback.best_model_path
 
-    def predict(self, model_path: str):
+    def predict(
+            self, 
+            model_path: str,
+            metric_path: str = './metrics',
+        ):
         """
         Use the best model to predict.
 
@@ -155,7 +156,7 @@ class Pipeline:
 
         performance = {k: v.item() for k, v in pipeline.test_performance.items()}
         ckpt_name = Path(model_path).name.replace('ckpt', 'csv')
-        metric_url = os.path.join(self.metric_path, self.config['task'], f'{self.config["model"]}-seed{self.config["seed"]}')
+        metric_url = os.path.join(metric_path, self.config['task'], f'{self.config["model"]}-seed{self.config["seed"]}')
         Path(metric_url).mkdir(parents=True, exist_ok=True)
         pd.DataFrame(performance, index=[0]).to_csv(os.path.join(metric_url, ckpt_name), index=False)
 
