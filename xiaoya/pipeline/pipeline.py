@@ -23,6 +23,7 @@ class Pipeline:
                 - AdaCare
                 - RNN
                 - MLP
+                - MHAGRU
         task: str. 
             the task, default is multitask, available tasks:
                 - multitask
@@ -40,12 +41,8 @@ class Pipeline:
             the patience for early stopping, default is 10.
         seed: int.
             the random seed, default is 42.
-        pretrained_model_path: Path.
-            the path of the pretrained model, default is None.
         data_path: Path.
             the path of the data, default is Path('./datasets').
-        ckpt_path: Path.
-            the path to save the checkpoints, default is Path('./checkpoints').
         demographic_dim: int.
             the dimension of the demographic features.
         labtest_dim: int.
@@ -90,7 +87,7 @@ class Pipeline:
             ckpt_name: str = 'best',    
         ) -> None:
         """
-        Train the model.
+        Train the model based on the config.
 
         Args:
             ckpt_path: str.
@@ -131,14 +128,16 @@ class Pipeline:
             metric_path: str = './metrics',
         ):
         """
-        Use the best model to predict.
+        Use the best model to predict, and then save the metrics.
 
         Args:
             model_path: str.
                 the path of the best model.
+            metric_path: str.
+                the path to save the metrics, default is './metrics'.
 
         Returns:
-            dict: the performance of the model.
+            Dict.
         """
 
         self.config.update({'los_info': self.los_info})
@@ -172,7 +171,7 @@ class Pipeline:
         Execute the pipeline, if model_path is None, then train the model, else predict directly.
 
         Returns:
-            dict: the performance of the model.
+            Dict.
         """
 
         if model_path is None:
