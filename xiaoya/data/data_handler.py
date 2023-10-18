@@ -299,7 +299,7 @@ class DataHandler:
             seed: int = 42,
         ) -> None:
         """
-        Execute the preprocessing pipeline, including split the dataset, normalize the dataset, and forward fill the dataset.
+        Execute the preprocessing pipeline, including format and merge dataframes, split the dataset, normalize the dataset, and forward fill the dataset.
 
         Args:
             train_size: int.
@@ -313,9 +313,13 @@ class DataHandler:
         """
         
         data_path = self.data_path
-        self.extract_features('labtest')
-        self.extract_features('events')
-        self.extract_features('target')
+        
+        # Extract features
+        self.list_all_features()
+
+        # Format and merge the dataframes
+        self.format_and_merge_dataframes()
+        
         demographic_features: List = self.raw_features['events']
         labtest_features: List = self.raw_features['labtest']
         if 'Age' in labtest_features:
