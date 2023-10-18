@@ -1,4 +1,4 @@
-# xiaoya
+# Xiaoya-Core
 
 xiaoya 2.0 core
 
@@ -13,7 +13,24 @@ xiaoya/ # root
     plot/ # plot modules
 ```
 
-## TODOs
+## Sample Usages
 
-- [ ] How to deal with the Age feature?
-- [ ] the testing scripts of pipeline.train()
+### Pipeline of Training and Predicting
+
+```python
+from xiaoya.data import DataHandler
+from xiaoya.pipeline import Pipeline
+
+labtest_data = pd.read_csv('datasets/labtest_data.csv')
+events_data = pd.read_csv('datasets/events_data.csv')
+target_data = pd.read_csv('datasets/target_data.csv')
+data_handler = DataHandler(labtest_data=labtest_data, events_data=events_data, target_data=target_data)
+data_handler.execute()
+
+pl = Pipeline()
+result = pl.execute()
+```
+
+### Analysis and Plot
+
+* Dataset Visualization
