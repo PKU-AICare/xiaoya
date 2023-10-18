@@ -16,7 +16,7 @@ class DataAnalyzer:
 
     Args:
         pipeline: Pipeline.
-            the pipeline.
+            the pipeline defined in xiaoya.pipeline.
         model_path: str.
             the path of the model.
     """
@@ -32,6 +32,17 @@ class DataAnalyzer:
             self, 
             x: torch.Tensor
         ) -> Dict:
+        """
+        Return the importance scores of a patient.
+
+        Args:
+            x: torch.Tensor.
+                the input of the patient.
+
+        Returns:
+            Dict.
+                the importance scores.
+        """
         config = self.pipeline.config
         config['model'] = 'MHAGRU'
     
@@ -64,7 +75,6 @@ class DataAnalyzer:
             Dict.
                 the feature importance.
         """
-
         xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         scores = self.importance_scores(x.to('cuda:0'))
@@ -100,7 +110,6 @@ class DataAnalyzer:
             Dict.
                 the data to draw risk curve.
         """
-
         xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         mask = mask[xid]                        # [ts, f]
@@ -126,6 +135,19 @@ class DataAnalyzer:
             input: torch.Tensor,
             time_index: int,
         ) -> List:
+        """
+        Return the advice of the AI system.
+
+        Args:
+            input: torch.Tensor.
+                the input of the patient.
+            time_index: int.
+                the time index of the patient.
+
+        Returns:
+            List.
+                the advice of the AI system.
+        """
         # x: [batch_size, seq_len, feature_dim]
         config = self.pipeline.config
         config['model'] = 'MHAGRU'
