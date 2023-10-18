@@ -167,9 +167,9 @@ class Pipeline:
             'config': self.config,
         }}
 
-    def execute(self, model_path: str = None):
+    def execute(self, model_path: Optional[str] = None):
         """
-        Execute the pipeline.
+        Execute the pipeline, if model_path is None, then train the model, else predict directly.
 
         Returns:
             dict: the performance of the model.
