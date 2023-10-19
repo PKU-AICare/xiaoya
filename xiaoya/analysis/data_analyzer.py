@@ -81,7 +81,7 @@ class DataAnalyzer:
         xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         scores = self.importance_scores(x.to('cuda:0'))
-        column_names = list(df.columns[6:])
+        column_names = list(df.columns[4:])
         return {
             'detail': {
                 'name': column_names,
