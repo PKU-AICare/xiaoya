@@ -1,4 +1,5 @@
 from typing import List, Dict
+import os
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -24,7 +25,7 @@ def plot_vis_dataset(
         plt.title(f'{feature["name"]}')
         plt.xlabel('Value')
         plt.ylabel('Count')
-        plt.savefig(f'{save_path}/{feature["name"]}_hist.png')
+        plt.savefig(os.path.join(save_path, f'{feature["name"]}_hist.png'))
 
 
 def plot_feature_importance(
@@ -59,7 +60,7 @@ def plot_feature_importance(
     plt.xlim(min(values) - 0.001, 1)  # Adjust the x-axis range for better visualization
     plt.gca().invert_yaxis()  # Invert y-axis for top-down display
     plt.tight_layout()
-    plt.savefig(f'{save_path}/{file_name}.png')
+    plt.savefig(os.path.join(save_path, f'{file_name}.png'))
 
 
 def plot_risk_curve(
@@ -120,13 +121,14 @@ def plot_risk_curve(
             twin.set_ylim(0.2, 1)
             twin.fill_between(x, ys[i], color=colors[i], alpha=0.1)
     plt.title('Health Metrics Over Time')
-    plt.savefig(f'{save_path}/{file_name}.png')
+    plt.savefig(os.path.join(save_path, f'{file_name}.png'))
 
 
 def plot_patient_embedding(
         data: List,
         save_path: str,
-        dimension: int = 2,    
+        dimension: int = 2,
+        file_name: str = 'patient_embedding_reduction',
     ) -> None:
     """
     Plot patients' embeddings in 2D or 3D space.
@@ -166,4 +168,4 @@ def plot_patient_embedding(
                 legend=False,
                 alpha=0.3,
             )
-    plt.savefig(save_path)
+    plt.savefig(os.path.join(save_path, f'{file_name}.png'))
