@@ -138,7 +138,7 @@ class DataAnalyzer:
             } for i in range(len(column_names))],
             'time': record_times,   # ts
             'time_step_importance': scores['time_step_importance'][0],  # ts
-            'feature importance': scores['feature importance'][0],
+            'feature_importance': scores['feature_importance'][0],
         }
     
     def ai_advice(self,
