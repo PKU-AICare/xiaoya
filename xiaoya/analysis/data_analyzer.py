@@ -58,7 +58,8 @@ class DataAnalyzer:
             self,
             df: pd.DataFrame,
             x: List,
-            patientID: int,
+            patient_index: Optional[int],
+            patient_id: Optional[int],
         ) -> Dict:
         """
         Return feature importance of a patient.
@@ -68,14 +69,16 @@ class DataAnalyzer:
                 the dataframe of the patient.
             x: List.
                 the input of the patient.
-            patientID: int.
+            patient_index: Optional[int].
+                the index of the patient in dataframe.
+            patient_id: Optional[int].
                 the patient ID.
 
         Returns:
             Dict.
                 the feature importance.
         """
-        xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
+        xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         scores = self.importance_scores(x.to('cuda:0'))
         column_names = list(df.columns[6:])
@@ -90,8 +93,9 @@ class DataAnalyzer:
             self, 
             df: pd.DataFrame,
             x: List,
-            patientID: int,
             mask: Optional[torch.Tensor],
+            patient_index: Optional[int],
+            patient_id: Optional[int],
         ) -> Dict:
         """
         Return data to draw risk curve of a patient.
@@ -103,20 +107,26 @@ class DataAnalyzer:
                 the input of the patient.
             mask: torch.Tensor.
                 the missing mask of the patient.
-            patientID: int.
+            patient_index: Optional[int].
+                the index of the patient in dataframe.
+            patient_id: Optional[int].
                 the patient ID.
 
         Returns:
             Dict.
                 the data to draw risk curve.
         """
-        xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
+        if patient_index is not None:
+            xid = patient_index
+            patient_id = list(df['PatientID'].drop_duplicates())[patient_index]
+        else:
+            xid = list(df['PatientID'].drop_duplicates()).index(patient_id)   
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         mask = mask[xid] if mask is not None else None  # [ts, f]
         scores = self.importance_scores(x.to('cuda:0'))
         
-        record_times = list(item[1] for item in df[df['PatientID'] == patientID]['RecordTime'].items())
         column_names = list(df.columns[4:])
+        record_times = list(item[1] for item in df[df['PatientID'] == patient_id]['RecordTime'].items()) 
 
         return {
             'detail': [{
