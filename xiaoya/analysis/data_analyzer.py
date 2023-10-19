@@ -48,6 +48,8 @@ class DataAnalyzer:
     
         pipeline = DlPipeline(config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
+        if pipeline.on_gpu():
+            x = x.to('cuda:0')
         _, _, scores = pipeline.predict_step(x)
 
         for key in scores:
@@ -80,7 +82,7 @@ class DataAnalyzer:
         """
         xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        scores = self.importance_scores(x.to('cuda:0'))
+        scores = self.importance_scores(x)
         column_names = list(df.columns[4:])
         return {
             'detail': {
@@ -123,7 +125,7 @@ class DataAnalyzer:
             xid = list(df['PatientID'].drop_duplicates()).index(patient_id)   
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         mask = mask[xid] if mask is not None else None  # [ts, f]
-        scores = self.importance_scores(x.to('cuda:0'))
+        scores = self.importance_scores(x)
         
         column_names = list(df.columns[4:])
         record_times = list(item[1] for item in df[df['PatientID'] == patient_id]['RecordTime'].items()) 
@@ -232,14 +234,21 @@ class DataAnalyzer:
         num = len(x)
         patients = []
         for i in range(num):
-            xi = torch.tensor(x[i]).unsqueeze(0).to('cuda:0')   # cuda
+            xi = torch.tensor(x[i]).unsqueeze(0)
             pidi = torch.tensor(pid[i]).unsqueeze(0)
             timei = record_time[i]
             config = self.config
             pipeline = DlPipeline(config)
             pipeline = pipeline.load_from_checkpoint(self.model_path)
-            y_hat, embedding, _ = pipeline.predict_step(xi)
-            embedding = embedding.cpu().detach().numpy().squeeze()  # cpu
+            if pipeline.on_gpu():
+                xi = xi.to('cuda:0')   # cuda
+                y_hat, embedding, _ = pipeline.predict_step(xi)
+                embedding = embedding.cpu().detach().numpy().squeeze()  # cpu
+                y_hat = y_hat.cpu().detach().numpy().squeeze()      # cpu
+            else:
+                y_hat, embedding, _ = pipeline.predict_step(xi)
+                embedding = embedding.detach().numpy().squeeze()
+                y_hat = y_hat.detach().numpy().squeeze()
             df = pd.DataFrame(embedding)
             if method == "PCA":  # 判断降维类别
                 reduction_model = PCA().fit_transform(df)
@@ -247,7 +256,6 @@ class DataAnalyzer:
                 reduction_model = TSNE(n_components=dimension, learning_rate='auto', init='random').fit_transform(df)
             if(reduction_model.shape[0] != reduction_model.shape[1]):
                 continue
-            y_hat = y_hat.cpu().detach().numpy().squeeze()      # cpu
             if target == "outcome":
                 y_hat = y_hat[:, 0].flatten().tolist()
             else:
