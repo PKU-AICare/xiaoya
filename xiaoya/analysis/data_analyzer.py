@@ -261,7 +261,7 @@ class DataAnalyzer:
             patient.append({'name': 'patient_id', 'value': pidi.item()})
             patient.append({'name': 'record_time', 'value': [str(x) for x in timei]})
             if std_age is not None and mean_age is not None:
-                patient.append({'name': 'age', 'value': xi[0][0][1].item() * std_age + mean_age})
+                patient.append({'name': 'age', 'value': int(xi[0][0][1].item() * std_age + mean_age)})
             patients.append(patient)
         return {'detail': patients}
     
