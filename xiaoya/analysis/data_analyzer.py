@@ -43,7 +43,7 @@ class DataAnalyzer:
             Dict.
                 the importance scores.
         """
-        config = self.pipeline.config
+        config = self.config
         config['model'] = 'MHAGRU'
     
         pipeline = DlPipeline(config)
@@ -159,7 +159,7 @@ class DataAnalyzer:
                 the advice of the AI system.
         """
         # x: [batch_size, seq_len, feature_dim]
-        config = self.pipeline.config
+        config = self.config
         config['model'] = 'MHAGRU'
 
         pipeline = DlPipeline(config)
@@ -235,7 +235,7 @@ class DataAnalyzer:
             xi = torch.tensor(x[i]).unsqueeze(0).to('cuda:0')   # cuda
             pidi = torch.tensor(pid[i]).unsqueeze(0)
             timei = record_time[i]
-            config = self.pipeline.config
+            config = self.config
             pipeline = DlPipeline(config)
             pipeline = pipeline.load_from_checkpoint(self.model_path)
             y_hat, embedding, _ = pipeline.predict_step(xi)
