@@ -149,10 +149,10 @@ def plot_patient_embedding(
         if dimension == 2: 
             df_subset = pd.DataFrame(data=patient[0]['value'], columns=['2d-one', '2d-two', 'target'])
             sns.scatterplot(
-                x="2d-one",
-                y="2d-two",
-                hue="target",
-                palette=sns.color_palette("coolwarm", as_cmap=True),
+                x='2d-one',
+                y='2d-two',
+                hue='target',
+                palette=sns.color_palette('coolwarm', as_cmap=True),
                 data=df_subset,
                 legend=False,
                 alpha=0.3,
@@ -160,12 +160,14 @@ def plot_patient_embedding(
         elif dimension == 3:
             df_subset = pd.DataFrame(data=patient[0]['value'], columns=['3d-one', '3d-two', '3d-three', 'target'])
             sns.scatterplot(
-                x="3d-one",
-                y="3d-two",
-                hue="target",
-                palette=sns.color_palette("coolwarm", as_cmap=True),
+                x='3d-one',
+                y='3d-two',
+                hue='target',
+                palette=sns.color_palette('coolwarm', as_cmap=True),
                 data=df_subset,
                 legend=False,
                 alpha=0.3,
             )
+    plt.xlabel('Component 1')
+    plt.ylabel('Component 2')
     plt.savefig(os.path.join(save_path, f'{file_name}.png'))

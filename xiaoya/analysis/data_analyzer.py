@@ -192,7 +192,7 @@ class DataAnalyzer:
             std_age: Optional[float],
             method: str = "PCA",
             dimension: int = 2,
-            target: str = "multitask",
+            target: str = "outcome",
         )-> List:
         """
         Return data to draw dimension reduction.
