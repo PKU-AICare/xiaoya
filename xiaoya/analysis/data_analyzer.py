@@ -1,4 +1,4 @@
-from typing import List, Dict 
+from typing import List, Dict, Optional
 
 import torch
 import pandas as pd
@@ -90,8 +90,8 @@ class DataAnalyzer:
             self, 
             df: pd.DataFrame,
             x: List,
-            mask: torch.Tensor,
             patientID: int,
+            mask: Optional[torch.Tensor],
         ) -> Dict:
         """
         Return data to draw risk curve of a patient.
@@ -112,7 +112,7 @@ class DataAnalyzer:
         """
         xid = list(df['PatientID'].drop_duplicates()).index(patientID)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        mask = mask[xid]                        # [ts, f]
+        mask = mask[xid] if mask is not None else None  # [ts, f]
         scores = self.importance_scores(x.to('cuda:0'))
         
         record_times = list(item[1] for item in df[df['PatientID'] == patientID]['RecordTime'].items())
@@ -123,7 +123,7 @@ class DataAnalyzer:
                 'name': column_names[i],
                 'value': x[0][:, i],
                 'time_step_feature_importance': scores['time_step_feature_importance'][0][:, i],
-                'missing': mask[:, i],
+                'missing': mask[:, i] if mask is not None else None,
                 'unit': ''
             } for i in range(len(column_names))],
             'time': record_times,   # ts
@@ -185,6 +185,11 @@ class DataAnalyzer:
 
     def data_dimension_reduction(
             self,
+            x: List,
+            pid: List,
+            record_time: List,
+            mean_age: Optional[float],
+            std_age: Optional[float],
             method: str = "PCA",
             dimension: int = 2,
             target: str = "multitask",
@@ -193,25 +198,33 @@ class DataAnalyzer:
         Return data to draw dimension reduction.
 
         Args:
-            method: one of {"PCA", "TSNE"}.
-            dimension: one of {2, 3}.
-            target: one of {"multitask", "los", "outcome"}.
+            x: List.
+                the input of the patient.
+            pid: List.
+                the patient ID.
+            record_time: List.
+                the record time of the patient.
+            mean_age: Optional[float].
+                the mean age of the patient.
+            std_age: Optional[float].
+                the std age of the patient.
+            method: str.
+                the method of dimension reduction, one of "PCA" and "TSNE".
+            dimension: int.
+                the dimension of dimension reduction, one of 2 and 3.
+            target: str.
+                the target of the model, one of "outcome", "los" and "multitask".
 
         Returns:
             List.
                 the data to draw dimension reduction.        
         """
-        x = pd.read_pickle('datasets/test_x.pkl')
-        y = pd.read_pickle('datasets/test_pid.pkl')
-        z = pd.read_pickle('datasets/test_record_time.pkl')
-        # mean = pd.read_pickle('datasets/test_mean.pkl')['Age']
-        # std = pd.read_pickle('datasets/test_std.pkl')['Age']
         num = len(x)
         patients = []
         for i in range(num):
             xi = torch.tensor(x[i]).unsqueeze(0).to('cuda:0')   # cuda
-            yi = torch.tensor(y[i]).unsqueeze(0)
-            zi = z[i]
+            pidi = torch.tensor(pid[i]).unsqueeze(0)
+            timei = record_time[i]
             config = self.pipeline.config
             pipeline = DlPipeline(config)
             pipeline = pipeline.load_from_checkpoint(self.model_path)
@@ -235,10 +248,10 @@ class DataAnalyzer:
                 patient.append({'name': 'data', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]})
             elif dimension == 3:
                 patient.append({'name': 'data', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]})
-            patient.append({'name': 'patient_id', 'value': yi.item()})
-            patient.append({'name': 'record_time', 'value': [str(x) for x in zi]})
-            # result['Age'] = xi[0][0][1].item() * std + mean
-            # patient.append({'name': 'age', 'value': xi[0][0][1].item() * std + mean})
+            patient.append({'name': 'patient_id', 'value': pidi.item()})
+            patient.append({'name': 'record_time', 'value': [str(x) for x in timei]})
+            if std_age is not None and mean_age is not None:
+                patient.append({'name': 'age', 'value': xi[0][0][1].item() * std_age + mean_age})
             patients.append(patient)
         return {'detail': patients}
     
