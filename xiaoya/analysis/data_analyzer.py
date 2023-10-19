@@ -15,17 +15,17 @@ class DataAnalyzer:
     DataAnalyzer
 
     Args:
-        pipeline: Pipeline.
-            the pipeline defined in xiaoya.pipeline.
+        config: Dict.
+            the config of the pipeline.
         model_path: str.
             the path of the model.
     """
 
     def __init__(self, 
-        pipeline: Pipeline,
+        config: Dict,
         model_path: str,
     ) -> None:
-        self.pipeline = pipeline
+        self.config = config
         self.model_path = model_path
 
     def importance_scores(
