@@ -95,7 +95,7 @@ class DataAnalyzer:
             self, 
             df: pd.DataFrame,
             x: List,
-            mask: Optional[torch.Tensor],
+            mask: Optional[List],
             patient_index: Optional[int],
             patient_id: Optional[int],
         ) -> Dict:
@@ -107,7 +107,7 @@ class DataAnalyzer:
                 the dataframe of the patient.
             x: List.
                 the input of the patient.
-            mask: torch.Tensor.
+            mask: Optional[List].
                 the missing mask of the patient.
             patient_index: Optional[int].
                 the index of the patient in dataframe.
@@ -122,7 +122,7 @@ class DataAnalyzer:
             xid = patient_index
             patient_id = list(df['PatientID'].drop_duplicates())[patient_index]
         else:
-            xid = list(df['PatientID'].drop_duplicates()).index(patient_id)   
+            xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         mask = mask[xid] if mask is not None else None  # [ts, f]
         scores = self.importance_scores(x)
@@ -144,15 +144,24 @@ class DataAnalyzer:
         }
     
     def ai_advice(self,
-            input: torch.Tensor,
+            df: pd.DataFrame,
+            x: List,
+            mask: Optional[List],
+            patient_id: int,
             time_index: int,
         ) -> List:
         """
         Return the advice of the AI system.
 
         Args:
-            input: torch.Tensor.
+            df: pd.DataFrame.
+                the dataframe of the patient.
+            x: List.
                 the input of the patient.
+            mask: Optional[List].
+                the missing mask of the patient.
+            patient_id: int.
+                the patient ID.
             time_index: int.
                 the time index of the patient.
 
@@ -160,21 +169,21 @@ class DataAnalyzer:
             List.
                 the advice of the AI system.
         """
-        # x: [batch_size, seq_len, feature_dim]
         config = self.config
         config['model'] = 'MHAGRU'
-
         pipeline = DlPipeline(config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
 
-        # three most important labtest features in the last time step
-        _, _, scores = pipeline.predict_step(input)
-        # TODO: demo dim
-        demo_dim = 2
-        input_last_step = input[0][time_index].tolist()[demo_dim:]
-        feature_last_step: List = scores['time_step_feature_importance'][0][time_index].tolist()[demo_dim:]
+        xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
+        x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        mask = mask[xid] if mask is not None else None  # [ts, f]
+        device = torch.device('cuda:0' if pipeline.on_gpu() else 'cpu')
+        _, _, scores = pipeline.predict_step(x.to(device))
 
-        index_dict = {index: value for index, value in enumerate(feature_last_step[demo_dim:]) if input_last_step[index] != 0}
+        demo_dim = 2
+        column_names = list(df.columns[2 + demo_dim:])
+        feature_last_step: List = scores['time_step_feature_importance'][0][time_index].tolist()[demo_dim:]
+        index_dict = {index: value for index, value in enumerate(feature_last_step[demo_dim:]) if mask is not None and mask[index] != 0}
         max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
         if len(max_indices) > 3:
             max_indices = max_indices[:3]
@@ -182,18 +191,21 @@ class DataAnalyzer:
         def f(x, args):
             input, i = args
             input[-1][-1][i] = torch.from_numpy(x).float()
-            y_hat, _, _ = pipeline.predict_step(input)      # y_hat: [bs, seq_len, 2]
-            return y_hat[0][time_index][0].detach().numpy()
+            y_hat, _, _ = pipeline.predict_step(input.to(device))      # y_hat: [bs, seq_len, 2]
+            return y_hat[0][time_index][0].cpu().detach().numpy()
 
         result = []
         for i in max_indices:
-            print('index: ', i)
-            x0 = float(input[-1][-1][i])
+            x0 = float(x[-1][-1][i])
             bounds = (max(-3, x0 - 1), min(3, x0 + 1))
-            args = (input, i)
+            args = (x, i)
             res = optimize.minimize(f, x0=x0, bounds=(bounds,), args=(args,), method='nelder-mead', options={'disp': True})
-            result.append(res.x[0])
-        return result
+            result.append({
+                'name': column_names[i],
+                'old_value': x0,
+                'new_value': float(res.x[0])
+            })
+        return {'detail': result}
 
     def data_dimension_reduction(
             self,
