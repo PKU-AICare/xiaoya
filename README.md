@@ -120,5 +120,23 @@ plot_patient_embedding(result['detail'], save_path='./output/')
 * AI Advice
 
 ```python
+from xiaoya.pipeline import Pipeline
+from xiaoya.analysis import DataAnalyzer
 
+pl = Pipeline(model='MHAGRU')
+pl.execute()
+
+data_analyzer = DataAnalyzer(pl.config, pl.model_path)
+train_raw = pd.read_csv('datasets/train_raw.csv')
+train_x = pd.read_pickle('datasets/train_x.pkl')
+train_mask = pd.read_pickle('datasets/train_missing_mask.pkl')
+
+result = data_analyzer.ai_advice(
+    df=train_raw,
+    x=train_x,
+    mask=train_mask,
+    patient_index=0,
+    time_index=-1
+)
+plot_patient_embedding(result['detail'], save_path='./output/')
 ```

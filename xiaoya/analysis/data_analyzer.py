@@ -147,7 +147,8 @@ class DataAnalyzer:
             df: pd.DataFrame,
             x: List,
             mask: Optional[List],
-            patient_id: int,
+            patient_index: Optional[int],
+            patient_id: Optional[int],
             time_index: int,
         ) -> List:
         """
@@ -160,7 +161,9 @@ class DataAnalyzer:
                 the input of the patient.
             mask: Optional[List].
                 the missing mask of the patient.
-            patient_id: int.
+            patient_index: Optional[int].
+                the index of the patient in dataframe.
+            patient_id: Optional[int].
                 the patient ID.
             time_index: int.
                 the time index of the patient.
@@ -174,7 +177,11 @@ class DataAnalyzer:
         pipeline = DlPipeline(config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
 
-        xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
+        if patient_index is not None:
+            xid = patient_index
+            patient_id = list(df['PatientID'].drop_duplicates())[patient_index]
+        else:
+            xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         mask = mask[xid] if mask is not None else None  # [ts, f]
         device = torch.device('cuda:0' if pipeline.on_gpu() else 'cpu')
