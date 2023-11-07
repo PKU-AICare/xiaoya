@@ -31,6 +31,7 @@ data_handler.execute()
 
 pl = Pipeline()
 result = pl.execute()
+print(result)
 ```
 
 ### Analysis and Plot
@@ -151,4 +152,5 @@ result = data_analyzer.ai_advice(
     patient_index=0,
     time_index=-1
 )
+print(result)
 ```
