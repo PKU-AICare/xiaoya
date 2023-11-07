@@ -1,6 +1,7 @@
 checkpoints/
 datasets/
 metrics/
+output/
 *.ipynb
 *.pkl
 
