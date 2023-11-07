@@ -1,6 +1,8 @@
 from typing import List, Dict
 import os
+from pathlib import Path
 
+import torch
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
@@ -20,6 +22,7 @@ def plot_vis_dataset(
             Path to save the plot.
     """
 
+    Path(save_path).mkdir(parents=True, exist_ok=True)
     for feature in data:
         plt.hist(feature['value'], bins=20, edgecolor='black')
         plt.title(f'{feature["name"]}')
@@ -60,6 +63,7 @@ def plot_feature_importance(
     plt.xlim(min(values) - 0.001, 1)  # Adjust the x-axis range for better visualization
     plt.gca().invert_yaxis()  # Invert y-axis for top-down display
     plt.tight_layout()
+    Path(save_path).mkdir(parents=True, exist_ok=True)
     plt.savefig(os.path.join(save_path, f'{file_name}.png'))
 
 
@@ -88,7 +92,7 @@ def plot_risk_curve(
     risk_index = data['time_step_importance']
     feature_importance = data['feature_importance']
     sorted_importance = sorted(feature_importance)[:feature_num]
-    index = [feature_importance.index(item) for item in sorted_importance]
+    index = [torch.where(feature_importance == item)[0].item() for item in sorted_importance]
 
     x = list(range(len(time)))
     x_label = time
@@ -121,6 +125,7 @@ def plot_risk_curve(
             twin.set_ylim(0.2, 1)
             twin.fill_between(x, ys[i], color=colors[i], alpha=0.1)
     plt.title('Health Metrics Over Time')
+    Path(save_path).mkdir(parents=True, exist_ok=True)
     plt.savefig(os.path.join(save_path, f'{file_name}.png'))
 
 
@@ -170,4 +175,5 @@ def plot_patient_embedding(
             )
     plt.xlabel('Component 1')
     plt.ylabel('Component 2')
+    Path(save_path).mkdir(parents=True, exist_ok=True)
     plt.savefig(os.path.join(save_path, f'{file_name}.png'))
