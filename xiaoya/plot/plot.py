@@ -91,8 +91,9 @@ def plot_risk_curve(
     time = data['time']
     risk_index = data['time_step_importance']
     feature_importance = data['feature_importance']
-    sorted_importance = sorted(feature_importance)[:feature_num]
-    index = [torch.where(feature_importance == item)[0].item() for item in sorted_importance]
+    importance_dict = {i: feature_importance[i] for i in range(len(feature_importance))}
+    importance_dict = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
+    index = [item[0] for item in importance_dict[:feature_num]]
 
     x = list(range(len(time)))
     x_label = time
@@ -125,6 +126,7 @@ def plot_risk_curve(
             twin.set_ylim(0.2, 1)
             twin.fill_between(x, ys[i], color=colors[i], alpha=0.1)
     plt.title('Health Metrics Over Time')
+    plt.tight_layout()
     Path(save_path).mkdir(parents=True, exist_ok=True)
     plt.savefig(os.path.join(save_path, f'{file_name}.png'))
 
