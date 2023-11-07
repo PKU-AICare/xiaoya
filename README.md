@@ -18,6 +18,8 @@ xiaoya/ # root
 ### Pipeline of Training and Predicting
 
 ```python
+import pandas as pd
+
 from xiaoya.data import DataHandler
 from xiaoya.pipeline import Pipeline
 
@@ -36,6 +38,8 @@ result = pl.execute()
 * Dataset Visualization
 
 ```python
+import pandas as pd
+
 from xiaoya.data import DataHandler
 from xiaoya.plot import plot_vis_dataset
 
@@ -50,6 +54,8 @@ plot_vis_dataset(result['detail'], save_path='./output/')
 * Plot Feature Importance histogram
 
 ```python
+import pandas as pd
+
 from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 from xiaoya.plot import plot_feature_importance
@@ -71,6 +77,8 @@ plot_feature_importance(result['detail'], save_path='./output/')
 * Plot Patient Risk curve
 
 ```python
+import pandas as pd
+
 from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 from xiaoya.plot import plot_risk_curve
@@ -94,6 +102,8 @@ plot_risk_curve(result, save_path='./output/')
 * Plot Patient Embedding and Trajectory
 
 ```python
+import pandas as pd
+
 from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 from xiaoya.plot import plot_patient_embedding
@@ -120,6 +130,8 @@ plot_patient_embedding(result['detail'], save_path='./output/')
 * AI Advice
 
 ```python
+import pandas as pd
+
 from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 
