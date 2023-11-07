@@ -131,10 +131,10 @@ class DataHandler:
         Save processed data to specified directory.
         """
         
-        self.standard_df['labtest'].to_csv(os.path.join(self.data_path, 'labtest_standard_data.csv'), index=False)
-        self.standard_df['events'].to_csv(os.path.join(self.data_path, 'events_standard_data.csv'), index=False)
-        self.standard_df['target'].to_csv(os.path.join(self.data_path, 'target_standard_data.csv'), index=False)
-        self.merged_df.to_csv(os.path.join(self.data_path, 'merged_standard_data.csv'), index=False)
+        self.standard_df['labtest'].to_csv(os.path.join(self.data_path, 'standard_labtest_data.csv'), index=False)
+        self.standard_df['events'].to_csv(os.path.join(self.data_path, 'standard_events_data.csv'), index=False)
+        self.standard_df['target'].to_csv(os.path.join(self.data_path, 'standard_target_data.csv'), index=False)
+        self.merged_df.to_csv(os.path.join(self.data_path, 'standard_merged_data.csv'), index=False)
 
     def extract_features(
             self, 
