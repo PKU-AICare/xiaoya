@@ -47,8 +47,9 @@ labtest_data = pd.read_csv('datasets/raw_labtest_data.csv')
 events_data = pd.read_csv('datasets/raw_events_data.csv')
 target_data = pd.read_csv('datasets/raw_target_data.csv')
 data_handler = DataHandler(labtest_data=labtest_data, events_data=events_data, target_data=target_data)
+data_handler.execute()
 result = data_handler.analyze_dataset()
-plot_vis_dataset(result['detail'], save_path='./output/')
+plot_vis_dataset(result['detail'], save_path='./output/vis_data')
 ```
 
 * Plot Feature Importance histogram
