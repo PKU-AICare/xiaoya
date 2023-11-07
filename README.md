@@ -151,5 +151,4 @@ result = data_analyzer.ai_advice(
     patient_index=0,
     time_index=-1
 )
-plot_patient_embedding(result['detail'], save_path='./output/')
 ```
