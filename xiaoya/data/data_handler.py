@@ -99,6 +99,10 @@ class DataHandler:
         df = pd.merge(df, events_standard_df, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
         df = pd.merge(df, target_standard_df, left_on=['PatientID', 'RecordTime'], right_on=['PatientID', 'RecordTime'], how='outer')
         
+        # Forward fill events.
+        for col in events_standard_df.columns.tolist():
+            df[col] = df[col].fillna(method='ffill')
+        
         # Change the order of columns.
         cols = ['PatientID', 'RecordTime', 'Outcome', 'LOS', 'Sex', 'Age']
         all_cols = df.columns.tolist()
