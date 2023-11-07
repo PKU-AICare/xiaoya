@@ -63,7 +63,7 @@ def forward_fill_pipeline(
         sorted_group = group.sort_values(by=['RecordTime'], ascending=True)
         patient_x = []
         patient_y = []
-        patient_missing_mask = pd.isna(sorted_group[labtest_features].values)
+        patient_missing_mask = pd.isna(sorted_group[labtest_features].values).tolist()
 
         for f in ['Age'] + labtest_features:
             to_fill_value = default_fill[f]
@@ -150,7 +150,7 @@ def save_record_time(
     all_record_time = []
     for _, group in grouped:
         sorted_group = group.sort_values(by=['RecordTime'], ascending=True)
-        record_time = sorted_group['RecordTime'].astype(int).values
+        record_time = sorted_group['RecordTime'].astype(int).tolist()
         all_record_time.append(record_time)
     return all_record_time
 
