@@ -146,7 +146,7 @@ class DataAnalyzer:
     def ai_advice(self,
             df: pd.DataFrame,
             x: List,
-            mask: Optional[List],
+            mask: List,
             time_index: int,
             patient_index: Optional[int] = 0,
             patient_id: Optional[int] = None,
@@ -183,14 +183,14 @@ class DataAnalyzer:
         else:
             xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        mask = mask[xid] if mask is not None else None  # [ts, f]
+        mask = mask[xid][time_index]
         device = torch.device('cuda:0' if pipeline.on_gpu else 'cpu')
         _, _, scores = pipeline.predict_step(x.to(device))
 
         demo_dim = 2
-        column_names = list(df.columns[2 + demo_dim:])
+        column_names = list(df.columns[4 + demo_dim:])
         feature_last_step: List = scores['time_step_feature_importance'][0][time_index].tolist()[demo_dim:]
-        index_dict = {index: value for index, value in enumerate(feature_last_step[demo_dim:]) if mask is not None and mask[index] != 0}
+        index_dict = {index: value for index, value in enumerate(feature_last_step) if mask[index] != 0}
         max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
         if len(max_indices) > 3:
             max_indices = max_indices[:3]
