@@ -118,7 +118,7 @@ class Pipeline:
         accelerator = 'gpu' if torch.cuda.is_available() else 'cpu'
 
         pipeline = DlPipeline(self.config)
-        trainer = L.Trainer(accelerator=accelerator, max_epochs=self.config['epochs'], callbacks=[early_stopping_callback, checkpoint_callback], logger=False, enable_progress_bar=True)
+        trainer = L.Trainer(accelerator=accelerator, devices=[0], max_epochs=self.config['epochs'], callbacks=[early_stopping_callback, checkpoint_callback], logger=False, enable_progress_bar=True)
         trainer.fit(pipeline, datamodule=dm)
         self.model_path = checkpoint_callback.best_model_path
 
@@ -150,7 +150,7 @@ class Pipeline:
 
         # train/val/test
         pipeline = DlPipeline(self.config)
-        trainer = L.Trainer(accelerator=accelerator, max_epochs=1, logger=False, num_sanity_val_steps=0)
+        trainer = L.Trainer(accelerator=accelerator, devices=[0], max_epochs=1, logger=False, num_sanity_val_steps=0)
         trainer.test(pipeline, datamodule=dm, ckpt_path=model_path)
 
         performance = {k: v.item() for k, v in pipeline.test_performance.items()}
