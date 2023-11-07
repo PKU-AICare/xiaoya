@@ -48,20 +48,20 @@ class DataAnalyzer:
     
         pipeline = DlPipeline(config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
-        if pipeline.on_gpu():
+        if pipeline.on_gpu:
             x = x.to('cuda:0')
         _, _, scores = pipeline.predict_step(x)
 
         for key in scores:
-            scores[key] = scores[key].cpu().detach().numpy() if isinstance(scores[key], torch.Tensor) else scores[key]
+            scores[key] = scores[key].detach().cpu()
         return scores
     
     def feature_importance(
             self,
             df: pd.DataFrame,
             x: List,
-            patient_index: Optional[int],
-            patient_id: Optional[int],
+            patient_index: Optional[int] = 0,
+            patient_id: Optional[int] = None,
         ) -> Dict:
         """
         Return feature importance of a patient.
@@ -83,7 +83,7 @@ class DataAnalyzer:
         xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         scores = self.importance_scores(x)
-        column_names = list(df.columns[4:])
+        column_names = list(df.columns[6:])
         return {
             'detail': {
                 'name': column_names,
@@ -96,8 +96,8 @@ class DataAnalyzer:
             df: pd.DataFrame,
             x: List,
             mask: Optional[List],
-            patient_index: Optional[int],
-            patient_id: Optional[int],
+            patient_index: Optional[int] = 0,
+            patient_id: Optional[int] = None,
         ) -> Dict:
         """
         Return data to draw risk curve of a patient.
@@ -127,7 +127,7 @@ class DataAnalyzer:
         mask = mask[xid] if mask is not None else None  # [ts, f]
         scores = self.importance_scores(x)
         
-        column_names = list(df.columns[4:])
+        column_names = list(df.columns[6:])
         record_times = list(item[1] for item in df[df['PatientID'] == patient_id]['RecordTime'].items()) 
 
         return {
@@ -147,9 +147,9 @@ class DataAnalyzer:
             df: pd.DataFrame,
             x: List,
             mask: Optional[List],
-            patient_index: Optional[int],
-            patient_id: Optional[int],
             time_index: int,
+            patient_index: Optional[int] = 0,
+            patient_id: Optional[int] = None,
         ) -> List:
         """
         Return the advice of the AI system.
@@ -184,7 +184,7 @@ class DataAnalyzer:
             xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         mask = mask[xid] if mask is not None else None  # [ts, f]
-        device = torch.device('cuda:0' if pipeline.on_gpu() else 'cpu')
+        device = torch.device('cuda:0' if pipeline.on_gpu else 'cpu')
         _, _, scores = pipeline.predict_step(x.to(device))
 
         demo_dim = 2
@@ -259,7 +259,7 @@ class DataAnalyzer:
             config = self.config
             pipeline = DlPipeline(config)
             pipeline = pipeline.load_from_checkpoint(self.model_path)
-            if pipeline.on_gpu():
+            if pipeline.on_gpu:
                 xi = xi.to('cuda:0')   # cuda
                 y_hat, embedding, _ = pipeline.predict_step(xi)
                 embedding = embedding.cpu().detach().numpy().squeeze()  # cpu
