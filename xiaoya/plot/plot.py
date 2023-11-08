@@ -24,6 +24,7 @@ def plot_vis_dataset(
 
     Path(save_path).mkdir(parents=True, exist_ok=True)
     for feature in data:
+        plt.cla()
         plt.hist(feature['value'], bins=20, edgecolor='black')
         plt.title(f'{feature["name"]}')
         plt.xlabel('Value')
