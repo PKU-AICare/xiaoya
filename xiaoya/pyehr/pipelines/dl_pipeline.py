@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, Dict
 from pathlib import Path
 
 import lightning as L
@@ -85,8 +85,9 @@ class DlPipeline(L.LightningModule):
             embedding = embedding.to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
+            scores.update({'time_risk': y_hat[:, :, 0]})
             self.scores = scores
-            return y_hat, embedding
+            return y_hat, embedding, scores
 
     def _get_loss(self, x, y, lens):
         if self.model_name in ["ConCare"]:
@@ -94,6 +95,10 @@ class DlPipeline(L.LightningModule):
             y_hat, y = unpad_y(y_hat, y, lens)
             loss = get_simple_loss(y_hat, y, self.task)
             loss += 10 * decov_loss
+        elif self.model_name in ["MHAGRU"]:
+            y_hat, embedding, scores = self(x, lens)
+            y_hat, y = unpad_y(y_hat, y, lens)
+            loss = get_simple_loss(y_hat, y, self.task)
         else:
             y_hat, embedding = self(x, lens)
             y_hat, y = unpad_y(y_hat, y, lens)
@@ -149,8 +154,8 @@ class DlPipeline(L.LightningModule):
             y: Optional[torch.Tensor] = None, 
             lens: Optional[torch.Tensor] = None
         ):
-        y_hat, embedding = self(x, x.shape[0])
-        return y_hat, embedding, self.scores
+        y_hat, embedding, scores = self(x, x.shape[0])
+        return y_hat, embedding, scores
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)
