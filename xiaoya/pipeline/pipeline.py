@@ -54,7 +54,7 @@ class Pipeline:
             batch_size: int = 64,
             learning_rate: float = 0.001,
             hidden_dim: int = 32,
-            epochs: int = 10,
+            epochs: int = 50,
             patience: int = 10,
             task: str = 'multitask',
             seed: int = 42,
@@ -166,6 +166,7 @@ class Pipeline:
             'preds': output['preds'],
             'labels': output['labels'],
             'config': self.config,
+            'performance': performance,
         }}
 
     def execute(self, model_path: Optional[str] = None):
