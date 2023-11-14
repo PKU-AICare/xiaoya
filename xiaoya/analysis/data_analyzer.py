@@ -139,7 +139,7 @@ class DataAnalyzer:
                 'unit': ''
             } for i in range(len(column_names))],
             'time': record_times,   # ts
-            'time_step_importance': scores['time_step_importance'][0],  # ts
+            'time_risk': scores['time_risk'][0],  # ts
             'feature_importance': scores['feature_importance'][0],
         }
     
