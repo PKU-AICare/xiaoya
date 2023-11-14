@@ -19,7 +19,7 @@ class MHAGRU(nn.Module):
         self.mha = nn.MultiheadAttention(feat_dim, self.num_heads, dropout=drop, batch_first=True)
         self.ffn = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim * 2),
-            nn.GELU(),
+            self.act,
             nn.Dropout(drop),
             nn.Linear(hidden_dim * 2, hidden_dim),
         )
@@ -27,11 +27,10 @@ class MHAGRU(nn.Module):
         
         self.input_attn = nn.Sequential(
             nn.Linear(input_dim, input_dim // 4),
-            nn.GELU(),
+            self.act,
             nn.Linear(input_dim // 4, input_dim),
             nn.Sigmoid()
         )
-        self.sigmoid = nn.Sigmoid()
         self.dropout = nn.Dropout(drop)
     
     def forward(self, x, **kwargs):
@@ -39,28 +38,28 @@ class MHAGRU(nn.Module):
         bs, time_steps, input_dim = x.shape
 
         x_unrolled = x.contiguous().view(-1, input_dim)    # [bs * t, h]
-        input_attn = self.input_attn(x_unrolled).view(bs, time_steps) # [bs, t]
+        input_attn = self.input_attn(x_unrolled).view(bs, time_steps, input_dim) # [bs, t, d_input]
 
-        x * input_attn.unsqueeze(-1)
+        x = x * input_attn
         out = torch.zeros(bs, time_steps, self.input_dim, self.feat_dim).to(x.device)
-        attention = torch.zeros(bs, time_steps, self.input_dim, time_steps).to(x.device)
+        # attention = torch.zeros(bs, time_steps, self.input_dim, time_steps).to(x.device)
         for i, gru in enumerate(self.grus):
             cur_feat = x[:, :, i].unsqueeze(-1)     # [bs, time_steps, 1]
             cur_feat = gru(cur_feat)[0]             # [bs, time_steps, feat_dim]
             
-            attn_feat, attn_weight = self.mha(cur_feat, cur_feat, cur_feat)
+            attn_feat, _ = self.mha(cur_feat, cur_feat, cur_feat)
             out[:, :, i] = attn_feat
-            attention[:, :, i] = attn_weight
+            # attention[:, :, i] = attn_weight
 
         out = out.flatten(2)        # [bs, time, input, feat] -> [bs, time, input * feat]
         out = self.out_proj(out)    # [bs, time, input * feat] -> [bs, time, hidden_dim]
         out = out + self.ffn(out)   # [bs, time, hidden_dim] -> [bs, time, hidden_dim]
         
-        feature_importance = self.sigmoid(attention.transpose(1, 2).reshape(bs, input_dim, -1).sum(-1).squeeze(-1)) # [bs, input_dim]
-        time_step_feature_importance = self.sigmoid(attention.sum(-1).squeeze(-1))  # [bs, time_steps, input_dim]
+        feature_importance = input_attn.sum(-1).squeeze(-1) # [bs, input_dim]
+        # time_step_feature_importance = input_attn  # [bs, time_steps, input_dim]
         
         scores = {
             'feature_importance': feature_importance,
-            'time_step_feature_importance': time_step_feature_importance
+            'time_step_feature_importance': input_attn
         }
         return out, scores
