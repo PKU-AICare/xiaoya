@@ -16,7 +16,7 @@ class MHAGRU(nn.Module):
                 for _ in range(input_dim)
             ]
         )
-        self.mha = nn.MultiheadAttention(feat_dim, self.num_heads, dropout=drop, batch_first=True)
+        self.mha = nn.MultiheadAttention(input_dim * feat_dim, self.num_heads, dropout=drop, batch_first=True)
         self.ffn = nn.Sequential(
             nn.Linear(hidden_dim, hidden_dim * 2),
             self.act,
@@ -46,12 +46,12 @@ class MHAGRU(nn.Module):
         for i, gru in enumerate(self.grus):
             cur_feat = x[:, :, i].unsqueeze(-1)     # [bs, time_steps, 1]
             cur_feat = gru(cur_feat)[0]             # [bs, time_steps, feat_dim]
-            
-            attn_feat, _ = self.mha(cur_feat, cur_feat, cur_feat)
-            out[:, :, i] = attn_feat
+            out[:, :, i] = cur_feat
             # attention[:, :, i] = attn_weight
 
         out = out.flatten(2)        # [bs, time, input, feat] -> [bs, time, input * feat]
+        out = self.dropout(out)
+        out = self.mha(out, out, out)[0]
         out = self.out_proj(out)    # [bs, time, input * feat] -> [bs, time, hidden_dim]
         out = out + self.ffn(out)   # [bs, time, hidden_dim] -> [bs, time, hidden_dim]
         
