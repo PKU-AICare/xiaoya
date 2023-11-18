@@ -2,10 +2,8 @@ checkpoints/
 datasets/
 metrics/
 output/
-docs/
 *.ipynb
 *.pkl
-mkdocs.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -145,7 +143,9 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-/site
+site/
+docs/
+mkdocs.yml
 
 # mypy
 .mypy_cache/
