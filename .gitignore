@@ -2,8 +2,10 @@ checkpoints/
 datasets/
 metrics/
 output/
+docs/
 *.ipynb
 *.pkl
+mkdocs.yml
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
