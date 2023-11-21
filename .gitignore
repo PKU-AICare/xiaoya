@@ -1,0 +1,5 @@
+docs/
+*.py
+*.ipynb
+site/
+mkdocs.yml
