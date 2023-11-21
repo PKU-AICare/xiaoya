@@ -288,5 +288,5 @@ class AdaCare(nn.Module):
             cur_mask = mask[:, :cur_time+1]
             cur_out, _, attn, _ = self.adacare_layer(cur_x, cur_mask)
             out[:, cur_time, :] = cur_out
-            inputattn[:, cur_time, :] = attn[:, :, 0]   # bs * d_input * ts
+            inputattn[:, cur_time, :] = attn[:, 0, :]   # bs * d_input * ts
         return out, inputattn
