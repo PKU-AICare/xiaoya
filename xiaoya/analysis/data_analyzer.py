@@ -2,6 +2,7 @@ from typing import List, Dict, Optional
 
 import torch
 import pandas as pd
+import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from scipy import optimize
@@ -27,8 +28,6 @@ class DataAnalyzer:
     ) -> None:
         self.config = config
         self.model_path = model_path
-
-
 
     def adaptive_feature_importance(
             self, 
@@ -144,7 +143,7 @@ class DataAnalyzer:
         y_hat = y_hat[0].detach().cpu().numpy()  # [ts, 2]
         scores = scores[0].detach().cpu().numpy()  # [ts, f]
         
-        mask = mask[xid] if mask is not None else None  # [ts, f]
+        mask = np.array(mask[xid]) if mask is not None else None  # [ts, f]
         column_names = list(df.columns[6:])
         record_times = list(item[1] for item in df[df['PatientID'] == patient_id]['RecordTime'].items()) 
 
@@ -153,7 +152,7 @@ class DataAnalyzer:
                 'name': column_names[i],
                 'value': x[:, i],
                 'time_step_feature_importance': scores[:, i],
-                'missing': mask[:, i] if mask is not None else None,
+                'missing': mask[:, i],
                 'unit': ''
             } for i in range(len(column_names))],
             'time': record_times,   # ts
