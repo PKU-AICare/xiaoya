@@ -6,6 +6,7 @@ import numpy as np
 from sklearn.decomposition import PCA
 from sklearn.manifold import TSNE
 from scipy import optimize
+from sklearn.cluster import KMeans
 
 from xiaoya.pyehr.pipelines import DlPipeline
 from xiaoya.pipeline import Pipeline
@@ -159,7 +160,8 @@ class DataAnalyzer:
             'time_risk': y_hat[:, 0],  # ts
         }
     
-    def ai_advice(self,
+    def ai_advice(
+            self,
             df: pd.DataFrame,
             x: List,
             mask: List,
@@ -275,7 +277,7 @@ class DataAnalyzer:
             xi = torch.cat((xi, xi), dim=0)
             if pipeline.on_gpu:
                 xi = xi.to('cuda:0')   # cuda
-                y_hat, embedding, _ = pipeline.predict_step(xi)
+            y_hat, embedding, _ = pipeline.predict_step(xi)
             embedding = embedding[0].cpu().detach().numpy().squeeze()  # cpu
             y_hat = y_hat[0].cpu().detach().numpy().squeeze()      # cpu
             
@@ -303,3 +305,44 @@ class DataAnalyzer:
             patients.append(patient)
         return {'detail': patients}
     
+    def similar_patients(
+            self,
+            x_df: pd.DataFrame,
+            x: List,
+            p_df: pd.DataFrame,
+            patients: List,
+            patient_index: Optional[int] = None,
+            patient_id: Optional[int] = None,
+            n_clu: int = 10,
+            topk: int = 6,
+        ):
+        """
+        Return similar patients information.
+        """
+        
+        pipeline = DlPipeline(self.config)
+        pipeline = pipeline.load_from_checkpoint(self.model_path)
+        xid = patient_index if patient_index is not None else list(x_df['PatientID'].drop_duplicates()).index(patient_id)        
+        x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        patients = torch.Tensor(patients)       # [b, ts, f]
+        if pipeline.on_gpu:
+            x = x.to('cuda:0')
+            patients = patients.to('cuda:0')
+        _, x_context, _ = pipeline.predict_step(x)
+        _, patients_context, _ = pipeline.predict_step(patients)
+        
+        x_context, patients_context = np.array(x_context[:, -1, :]), np.array(patients_context[:, -1, :])
+        cluster = KMeans(n_clusters=n_clu).fit(patients_context)
+        center_id = cluster.predict(x_context)
+        similar_patients_id = cluster.labels_ == center_id
+        similar_patients_context = patients_context[similar_patients_id]
+        similar_patients_info = p_df[similar_patients_id]
+        
+        dist = np.sqrt(np.sum(np.square(x_context - similar_patients_context), axis=1))
+        dist_dict = {index: value for index, value in enumerate(dist)}
+        dist_sorted = list(sorted(dist_dict.items(), key=lambda x: x[1]))[:topk]
+        index = [item[0] for item in dist_sorted]
+        
+        topDist = dist[index]
+        maxDist, minDist = np.max(topDist), np.min(topDist)
+        topSimilarity = ((topDist - minDist) / (maxDist - minDist)).tolist()
