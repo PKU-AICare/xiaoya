@@ -93,12 +93,11 @@ class DataAnalyzer:
                 The patient ID recorded in dataframe.
                 patient_index and patient_id can only choose one.
 
-        Returns:
-            Dict.
-                detail: a list of dicts with shape [feature_dim],
-                    name: the name of the feature.
-                    value: the feature importance value.
-                    adaptive: the adaptive feature importance value.
+        Returns: Dict.
+            detail: a list of dicts with shape [lab_dim],
+                name: the name of the feature.
+                value: the feature importance value.
+                adaptive: the adaptive feature importance value.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
@@ -127,23 +126,35 @@ class DataAnalyzer:
             patient_id: Optional[int] = None,
         ) -> Dict:
         """
-        Return data to draw risk curve of a patient.
+        Return risk curve of a patient.
 
         Args:
             df: pd.DataFrame.
-                the dataframe of the patient.
+                A dataframe representing the patients' raw data.
             x: List.
-                the input of the patient.
+                A list of shape [batch_size, time_step, feature_dim],
+                representing the input of the patients.
             mask: Optional[List].
-                the missing mask of the patient.
+                A list of shape [batch_size, time_step, feature_dim],
+                representing the missing status of the patients's raw data.
             patient_index: Optional[int].
-                the index of the patient in dataframe.
+                The index of the patient in dataframe.
             patient_id: Optional[int].
-                the patient ID.
+                The patient ID recorded in dataframe.
+                patient_index and patient_id can only choose one.
 
-        Returns:
-            Dict.
-                the data to draw risk curve.
+        Returns: Dict.
+            detail: A list of dicts with shape [lab_dim],
+                name: the name of the feature.
+                value: the value of the feature in all visits.
+                importance: the feature importance value.
+                adaptive: the adaptive feature importance value.
+                missing: the missing status of the feature in all visits.
+                unit: the unit of the feature.
+            time: A list of shape [time_step],
+                representing the date of the patient's visits.
+            time_risk: A list of shape [time_step],
+                representing the risk of the patient at each visit.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
@@ -153,13 +164,13 @@ class DataAnalyzer:
         else:
             xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        x = torch.cat((x, x), dim=0)
         if pipeline.on_gpu:
             x = x.to('cuda:0')
-        y_hat, _, scores = pipeline.predict_step(x)
+        y_hat, _, feat_attn = pipeline.predict_step(x)
         x = x[0].detach().cpu().numpy()  # [ts, f]
         y_hat = y_hat[0].detach().cpu().numpy()  # [ts, 2]
-        scores = scores[0].detach().cpu().numpy()  # [ts, f]
-        
+        feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, f]
         mask = np.array(mask[xid]) if mask is not None else None  # [ts, f]
         column_names = list(df.columns[6:])
         record_times = list(item[1] for item in df[df['PatientID'] == patient_id]['RecordTime'].items()) 
@@ -167,9 +178,10 @@ class DataAnalyzer:
         return {
             'detail': [{
                 'name': column_names[i],
-                'value': x[:, i],
-                'time_step_feature_importance': scores[:, i],
-                'missing': mask[:, i],
+                'value': x[:, i].tolist(),
+                'importance': feat_attn[-1, i].tolist(),
+                'adaptive': feat_attn[:, i].tolist(),
+                'missing': mask[:, i].tolist(),
                 'unit': ''
             } for i in range(len(column_names))],
             'time': record_times,   # ts
