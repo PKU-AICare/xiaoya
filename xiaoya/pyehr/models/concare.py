@@ -608,15 +608,15 @@ class ConCareLayer(nn.Module):
             ),
         )  # # batch_size * d_input * hidden_dim
 
-        DeCov_loss = contexts[1]
+        deCov_loss = contexts[1]
         contexts = contexts[0]
 
         contexts = self.SublayerConnection(
             contexts, lambda _: self.PositionwiseFeedForward(contexts)
         )[0]
 
-        weighted_contexts, a = self.FinalAttentionQKV(contexts)
-        return weighted_contexts, DeCov_loss
+        weighted_contexts, feature_attn = self.FinalAttentionQKV(contexts)
+        return weighted_contexts, feature_attn, deCov_loss
 
 class ConCare(nn.Module):
     def __init__(
@@ -663,12 +663,14 @@ class ConCare(nn.Module):
         # rnn will only apply dropout between layers
         batch_size, time_steps, _ = x.size()
         out = torch.zeros((batch_size, time_steps, self.hidden_dim))
+        feat_attn = torch.zeros((batch_size, time_steps, self.hidden_dim, self.hidden_dim))
         decov_loss = 0
         for cur_time in range(time_steps):
             cur_x = x[:, :cur_time+1, :]
             cur_mask = mask[:, :cur_time+1]
-            cur_out, decov = self.concare_layer(cur_x, static, cur_mask)
+            cur_out, cur_attn, decov = self.concare_layer(cur_x, static, cur_mask)
             out[:, cur_time, :] = cur_out
+            feat_attn[:, cur_time, :, :] = cur_attn
             decov_loss += decov
         decov_loss /= time_steps
         out = self.dropout(out)

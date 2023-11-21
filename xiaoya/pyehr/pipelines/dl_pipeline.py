@@ -57,13 +57,19 @@ class DlPipeline(L.LightningModule):
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding, decov_loss
+        elif self.model_name in ["AdaCare"]:
+            mask = generate_mask(lens)
+            embedding, inputattn = self.ehr_encoder(x, mask).to(x.device)
+            self.embedding = embedding
+            y_hat = self.head(embedding)
+            return y_hat, embedding, inputattn
         elif self.model_name in ["GRASP", "Agent"]:
             x_demo, x_lab, mask = x[:, 0, :self.demo_dim], x[:, :, self.demo_dim:], generate_mask(lens)
             embedding = self.ehr_encoder(x_lab, x_demo, mask).to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding
-        elif self.model_name in ["AdaCare", "RETAIN", "TCN", "Transformer", "StageNet"]:
+        elif self.model_name in ["RETAIN", "TCN", "Transformer", "StageNet"]:
             mask = generate_mask(lens)
             embedding = self.ehr_encoder(x, mask).to(x.device)
             self.embedding = embedding
@@ -85,8 +91,6 @@ class DlPipeline(L.LightningModule):
             embedding = embedding.to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
-            scores.update({'time_risk': y_hat[:, :, 0]})
-            self.scores = scores
             return y_hat, embedding, scores
 
     def _get_loss(self, x, y, lens):
@@ -95,6 +99,10 @@ class DlPipeline(L.LightningModule):
             y_hat, y = unpad_y(y_hat, y, lens)
             loss = get_simple_loss(y_hat, y, self.task)
             loss += 10 * decov_loss
+        elif self.model_name in ["AdaCare"]:
+            y_hat, embedding, inputattn = self(x, lens)
+            y_hat, y = unpad_y(y_hat, y, lens)
+            loss = get_simple_loss(y_hat, y, self.task)
         elif self.model_name in ["MHAGRU"]:
             y_hat, embedding, scores = self(x, lens)
             y_hat, y = unpad_y(y_hat, y, lens)
@@ -154,8 +162,17 @@ class DlPipeline(L.LightningModule):
             y: Optional[torch.Tensor] = None, 
             lens: Optional[torch.Tensor] = None
         ):
-        y_hat, embedding, scores = self(x, x.shape[0])
-        return y_hat, embedding, scores
+        if self.model_name in ["ConCare"]:
+            y_hat, embedding, decov_loss = self(x, x.shape[0])
+            return y_hat, embedding, decov_loss
+        elif self.model_name in ["AdaCare"]:
+            y_hat, embedding, inputattn = self(x, x.shape[0])
+            return y_hat, embedding, inputattn
+        elif self.model_name in ["MHAGRU"]:
+            y_hat, embedding, scores = self(x, x.shape[0])
+            return y_hat, embedding, scores
+        else:
+            return None
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.learning_rate)

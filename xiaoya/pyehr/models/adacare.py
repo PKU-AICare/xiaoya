@@ -282,9 +282,11 @@ class AdaCare(nn.Module):
     ):
         batch_size, time_steps, _ = x.size()
         out = torch.zeros((batch_size, time_steps, self.hidden_dim))
+        inputattn = torch.zeros((batch_size, time_steps, self.input_dim))
         for cur_time in range(time_steps):
             cur_x = x[:, :cur_time+1, :]
             cur_mask = mask[:, :cur_time+1]
-            cur_out, _, _, _ = self.adacare_layer(cur_x, cur_mask)
+            cur_out, _, attn, _ = self.adacare_layer(cur_x, cur_mask)
             out[:, cur_time, :] = cur_out
-        return out
+            inputattn[:, cur_time, :] = attn[:, -1, :]
+        return out, inputattn
