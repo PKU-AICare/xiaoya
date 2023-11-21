@@ -28,9 +28,14 @@ class DataAnalyzer:
         self.config = config
         self.model_path = model_path
 
-    def importance_scores(
+
+
+    def adaptive_feature_importance(
             self, 
-            x: torch.Tensor
+            df: pd.DataFrame,
+            x: List,
+            patient_index: Optional[int] = None,
+            patient_id: Optional[int] = None,
         ) -> Dict:
         """
         Return the importance scores of a patient.
@@ -43,24 +48,25 @@ class DataAnalyzer:
             Dict.
                 the importance scores.
         """
-        config = self.config
-        config['model'] = 'MHAGRU'
-    
-        pipeline = DlPipeline(config)
+        pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
+        xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
+        x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
         if pipeline.on_gpu:
             x = x.to('cuda:0')
-        _, _, scores = pipeline.predict_step(x)
+        _, _, input_attn = pipeline.predict_step(x)
+        input_attn = input_attn[0]
 
-        for key in scores:
-            scores[key] = scores[key].detach().cpu()
-        return scores
+        rerult = {
+            'detail': input_attn.detach().cpu().numpy().tolist() # [ts, f]
+        }
+        return rerult
     
     def feature_importance(
             self,
             df: pd.DataFrame,
             x: List,
-            patient_index: Optional[int] = 0,
+            patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
         ) -> Dict:
         """
@@ -80,14 +86,19 @@ class DataAnalyzer:
             Dict.
                 the feature importance.
         """
+        pipeline = DlPipeline(self.config)
+        pipeline = pipeline.load_from_checkpoint(self.model_path)
         xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        scores = self.importance_scores(x)
+        if pipeline.on_gpu:
+            x = x.to('cuda:0')
+        _, _, feat_attn = pipeline.predict_step(x)
+        feat_attn = feat_attn[0][-1]    # [f, f]
         column_names = list(df.columns[6:])
         return {
             'detail': {
                 'name': column_names,
-                'value': scores['feature_importance'][0],   # feature importance value
+                'value': feat_attn.detach().cpu().numpy().tolist()  # feature importance value
             }
         }
 
@@ -96,7 +107,7 @@ class DataAnalyzer:
             df: pd.DataFrame,
             x: List,
             mask: Optional[List],
-            patient_index: Optional[int] = 0,
+            patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
         ) -> Dict:
         """
@@ -118,29 +129,35 @@ class DataAnalyzer:
             Dict.
                 the data to draw risk curve.
         """
+        pipeline = DlPipeline(self.config)
+        pipeline = pipeline.load_from_checkpoint(self.model_path)
         if patient_index is not None:
             xid = patient_index
             patient_id = list(df['PatientID'].drop_duplicates())[patient_index]
         else:
             xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        mask = mask[xid] if mask is not None else None  # [ts, f]
-        scores = self.importance_scores(x)
+        if pipeline.on_gpu:
+            x = x.to('cuda:0')
+        y_hat, _, scores = pipeline.predict_step(x)
+        x = x[0].detach().cpu().numpy()  # [ts, f]
+        y_hat = y_hat[0].detach().cpu().numpy()  # [ts, 2]
+        scores = scores[0].detach().cpu().numpy()  # [ts, f]
         
+        mask = mask[xid] if mask is not None else None  # [ts, f]
         column_names = list(df.columns[6:])
         record_times = list(item[1] for item in df[df['PatientID'] == patient_id]['RecordTime'].items()) 
 
         return {
             'detail': [{
                 'name': column_names[i],
-                'value': x[0][:, i],
-                'time_step_feature_importance': scores['time_step_feature_importance'][0][:, i],
+                'value': x[:, i],
+                'time_step_feature_importance': scores[:, i],
                 'missing': mask[:, i] if mask is not None else None,
                 'unit': ''
             } for i in range(len(column_names))],
             'time': record_times,   # ts
-            'time_risk': scores['time_risk'][0],  # ts
-            'feature_importance': scores['feature_importance'][0],
+            'time_risk': y_hat[:, 0],  # ts
         }
     
     def ai_advice(self,
@@ -148,7 +165,7 @@ class DataAnalyzer:
             x: List,
             mask: List,
             time_index: int,
-            patient_index: Optional[int] = 0,
+            patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
         ) -> List:
         """
@@ -172,24 +189,22 @@ class DataAnalyzer:
             List.
                 the advice of the AI system.
         """
-        config = self.config
-        config['model'] = 'MHAGRU'
-        pipeline = DlPipeline(config)
+        pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
-
         if patient_index is not None:
             xid = patient_index
             patient_id = list(df['PatientID'].drop_duplicates())[patient_index]
         else:
             xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        mask = mask[xid][time_index]
         device = torch.device('cuda:0' if pipeline.on_gpu else 'cpu')
-        _, _, scores = pipeline.predict_step(x.to(device))
+        _, _, feat_attn = pipeline.predict_step(x.to(device))
+        feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, f, f]
+        mask = mask[xid][time_index]
 
         demo_dim = 2
         column_names = list(df.columns[4 + demo_dim:])
-        feature_last_step: List = scores['time_step_feature_importance'][0][time_index].tolist()[demo_dim:]
+        feature_last_step: List = feat_attn[time_index].sum(dim=0).tolist()[demo_dim:]
         index_dict = {index: value for index, value in enumerate(feature_last_step) if mask[index] != 0}
         max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
         if len(max_indices) > 3:
