@@ -143,7 +143,6 @@ venv.bak/
 .ropeproject
 
 # mkdocs documentation
-site/
 docs/
 mkdocs.yml
 
