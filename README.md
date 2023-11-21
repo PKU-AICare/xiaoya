@@ -62,7 +62,7 @@ from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 from xiaoya.plot import plot_feature_importance
 
-pl = Pipeline(model='MHAGRU')
+pl = Pipeline(model='ConCare')
 pl.execute()
 
 data_analyzer = DataAnalyzer(pl.config, pl.model_path)
@@ -85,7 +85,7 @@ from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 from xiaoya.plot import plot_risk_curve
 
-pl = Pipeline(model='MHAGRU')
+pl = Pipeline(model='AdaCare')
 pl.execute()
 
 data_analyzer = DataAnalyzer(pl.config, pl.model_path)
@@ -110,7 +110,7 @@ from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 from xiaoya.plot import plot_patient_embedding
 
-pl = Pipeline(model='MHAGRU')
+pl = Pipeline(model='ConCare')
 pl.execute()
 
 data_analyzer = DataAnalyzer(pl.config, pl.model_path)
@@ -137,7 +137,7 @@ import pandas as pd
 from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 
-pl = Pipeline(model='MHAGRU')
+pl = Pipeline(model='ConCare')
 pl.execute()
 
 data_analyzer = DataAnalyzer(pl.config, pl.model_path)
