@@ -90,9 +90,8 @@ def plot_risk_curve(
 
     detail = data['detail']
     time = data['time']
-    risk_index = data['time_step_importance']
-    feature_importance = data['feature_importance']
-    importance_dict = {i: feature_importance[i] for i in range(len(feature_importance))}
+    risk_index = data['time_risk']
+    importance_dict = {i: detail[i]['time_step_feature_importance'][-1] for i in range(len(detail))}
     importance_dict = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
     index = [item[0] for item in importance_dict[:feature_num]]
 
