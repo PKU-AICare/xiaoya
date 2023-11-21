@@ -161,7 +161,7 @@ class DlPipeline(L.LightningModule):
     def predict_step(self, 
             x: torch.Tensor, 
         ):
-        lens = torch.Tensor([x.shape[1]]).to(x.device)
+        lens = torch.Tensor([len(x[i]) for i in range(x.shape[0])]).to(x.device)
         if self.model_name in ["ConCare"]:
             y_hat, embedding, feat_attn, decov_loss = self(x, lens)
             return y_hat, embedding, feat_attn

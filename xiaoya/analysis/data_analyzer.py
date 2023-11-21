@@ -270,18 +270,15 @@ class DataAnalyzer:
             xi = torch.tensor(x[i]).unsqueeze(0)
             pidi = torch.tensor(pid[i]).unsqueeze(0)
             timei = record_time[i]
-            config = self.config
-            pipeline = DlPipeline(config)
+            pipeline = DlPipeline(self.config)
             pipeline = pipeline.load_from_checkpoint(self.model_path)
+            xi = torch.cat((xi, xi), dim=0)
             if pipeline.on_gpu:
                 xi = xi.to('cuda:0')   # cuda
                 y_hat, embedding, _ = pipeline.predict_step(xi)
-                embedding = embedding.cpu().detach().numpy().squeeze()  # cpu
-                y_hat = y_hat.cpu().detach().numpy().squeeze()      # cpu
-            else:
-                y_hat, embedding, _ = pipeline.predict_step(xi)
-                embedding = embedding.detach().numpy().squeeze()
-                y_hat = y_hat.detach().numpy().squeeze()
+            embedding = embedding[0].cpu().detach().numpy().squeeze()  # cpu
+            y_hat = y_hat[0].cpu().detach().numpy().squeeze()      # cpu
+            
             df = pd.DataFrame(embedding)
             if method == "PCA":  # 判断降维类别
                 reduction_model = PCA().fit_transform(df)
