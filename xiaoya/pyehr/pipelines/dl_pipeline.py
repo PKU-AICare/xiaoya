@@ -59,7 +59,8 @@ class DlPipeline(L.LightningModule):
             return y_hat, embedding, feat_attn, decov_loss
         elif self.model_name in ["AdaCare"]:
             mask = generate_mask(lens)
-            embedding, input_attn = self.ehr_encoder(x, mask).to(x.device)
+            embedding, input_attn = self.ehr_encoder(x, mask)
+            embedding = embedding.to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
             return y_hat, embedding, input_attn
@@ -159,17 +160,16 @@ class DlPipeline(L.LightningModule):
 
     def predict_step(self, 
             x: torch.Tensor, 
-            y: Optional[torch.Tensor] = None, 
-            lens: Optional[torch.Tensor] = None
         ):
+        lens = torch.Tensor([x.shape[1]]).to(x.device)
         if self.model_name in ["ConCare"]:
-            y_hat, embedding, feat_attn, decov_loss = self(x, x.shape[0])
+            y_hat, embedding, feat_attn, decov_loss = self(x, lens)
             return y_hat, embedding, feat_attn
         elif self.model_name in ["AdaCare"]:
-            y_hat, embedding, input_attn = self(x, x.shape[0])
+            y_hat, embedding, input_attn = self(x, lens)
             return y_hat, embedding, input_attn
         elif self.model_name in ["MHAGRU"]:
-            y_hat, embedding, scores = self(x, x.shape[0])
+            y_hat, embedding, scores = self(x, lens)
             return y_hat, embedding, scores
         else:
             return None
