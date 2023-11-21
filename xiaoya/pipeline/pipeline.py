@@ -21,9 +21,9 @@ class Pipeline:
                 - LSTM
                 - GRU
                 - AdaCare
+                - ConCare
                 - RNN
                 - MLP
-                - MHAGRU
         task: str. 
             the task, default is multitask, available tasks:
                 - multitask
