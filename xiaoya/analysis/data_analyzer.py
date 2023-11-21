@@ -14,13 +14,13 @@ from xiaoya.pipeline import Pipeline
 
 class DataAnalyzer:
     """
-    DataAnalyzer
+    DataAnalyzer.
 
     Args:
         config: Dict.
             the config of the pipeline.
         model_path: str.
-            the path of the model.
+            the saved path of the model.
     """
 
     def __init__(self, 
@@ -38,15 +38,24 @@ class DataAnalyzer:
             patient_id: Optional[int] = None,
         ) -> Dict:
         """
-        Return the importance scores of a patient.
+        Return the adaptive feature importance of a patient.
 
         Args:
-            x: torch.Tensor.
-                the input of the patient.
+            df: pd.DataFrame.
+                A dataframe representing the patients' raw data.
+            x: List.
+                A list of shape [batch_size, time_step, feature_dim],
+                representing the input of the patients.
+            patient_index: Optional[int].
+                The index of the patient in dataframe.
+            patient_id: Optional[int].
+                The patient ID recorded in dataframe.
+                patient_index and patient_id can only choose one.
 
         Returns:
             Dict.
-                the importance scores.
+                detail: a numpy array of shape [time_step, feature_dim],
+                representing the adaptive feature importance of the patient.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
