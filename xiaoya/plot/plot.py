@@ -52,7 +52,7 @@ def plot_feature_importance(
             File name of the plot.
     """
 
-    importance = dict(zip(data['name'], data['value']))
+    importance = {data[i]['name']: data[i]['value'] for i in range(len(data))}
     importance = sorted(importance.items(), key=lambda x: x[1], reverse=True)
     names = [item[0] for item in importance[:feature_num]]
     values = [item[1] for item in importance[:feature_num]]
@@ -61,7 +61,7 @@ def plot_feature_importance(
     plt.barh(names, values, color='blue', alpha=0.75)
     plt.xlabel('Importance Index')
     plt.title('Feature Importance')
-    plt.xlim(min(values) - 0.001, 1)  # Adjust the x-axis range for better visualization
+    plt.xlim(min(values) / 2, max(values))  # Adjust the x-axis range for better visualization
     plt.gca().invert_yaxis()  # Invert y-axis for top-down display
     plt.tight_layout()
     Path(save_path).mkdir(parents=True, exist_ok=True)
