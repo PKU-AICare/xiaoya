@@ -52,10 +52,9 @@ class DataAnalyzer:
                 The patient ID recorded in dataframe.
                 patient_index and patient_id can only choose one.
 
-        Returns:
-            Dict.
-                detail: a numpy array of shape [time_step, feature_dim],
-                representing the adaptive feature importance of the patient.
+        Returns: Dict.
+            detail: a List of shape [time_step, feature_dim],
+            representing the adaptive feature importance of the patient.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
@@ -94,7 +93,7 @@ class DataAnalyzer:
                 patient_index and patient_id can only choose one.
 
         Returns: Dict.
-            detail: a List of dicts with shape [lab_dim],
+            detail: a List of dicts with shape [lab_dim]:
                 name: the name of the feature.
                 value: the feature importance value.
                 adaptive: the adaptive feature importance value.
@@ -112,8 +111,8 @@ class DataAnalyzer:
         return {
             'detail': [{
                 'name': column_names[i],
-                'value': feat_attn[-1, i],
-                'adaptive': feat_attn[:, i],
+                'value': feat_attn[-1, i].tolist(),
+                'adaptive': feat_attn[:, i].tolist(),
             } for i in range(len(column_names))]
         }
 
@@ -144,7 +143,7 @@ class DataAnalyzer:
                 patient_index and patient_id can only choose one.
 
         Returns: Dict.
-            detail: A List of dicts with shape [lab_dim],
+            detail: A List of dicts with shape [lab_dim].
                 name: the name of the feature.
                 value: the value of the feature in all visits.
                 importance: the feature importance value.
@@ -214,9 +213,11 @@ class DataAnalyzer:
             time_index: int.
                 the time index of the patient.
 
-        Returns:
-            List.
-                the advice of the AI system.
+        Returns: Dict.
+            detail: A List of dicts with shape [num_advice], default is 3.
+                name: the name of the feature.
+                old_value: the old value of the feature.
+                new_value: the new value of the feature.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
@@ -234,7 +235,7 @@ class DataAnalyzer:
 
         demo_dim = 2
         column_names = list(df.columns[4 + demo_dim:])
-        feature_last_step: List = feat_attn[time_index].sum(dim=0).tolist()[demo_dim:]
+        feature_last_step: List = feat_attn[time_index].sum(dim=0).tolist()
         index_dict = {index: value for index, value in enumerate(feature_last_step) if mask[index] != 0}
         max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
         if len(max_indices) > 3:
