@@ -44,7 +44,7 @@ class DataAnalyzer:
             df: pd.DataFrame.
                 A dataframe representing the patients' raw data.
             x: List.
-                A list of shape [batch_size, time_step, feature_dim],
+                A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
             patient_index: Optional[int].
                 The index of the patient in dataframe.
@@ -85,7 +85,7 @@ class DataAnalyzer:
             df: pd.DataFrame.
                 A dataframe representing the patients' raw data.
             x: List.
-                A list of shape [batch_size, time_step, feature_dim],
+                A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
             patient_index: Optional[int].
                 The index of the patient in dataframe.
@@ -94,7 +94,7 @@ class DataAnalyzer:
                 patient_index and patient_id can only choose one.
 
         Returns: Dict.
-            detail: a list of dicts with shape [lab_dim],
+            detail: a List of dicts with shape [lab_dim],
                 name: the name of the feature.
                 value: the feature importance value.
                 adaptive: the adaptive feature importance value.
@@ -132,10 +132,10 @@ class DataAnalyzer:
             df: pd.DataFrame.
                 A dataframe representing the patients' raw data.
             x: List.
-                A list of shape [batch_size, time_step, feature_dim],
+                A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
             mask: Optional[List].
-                A list of shape [batch_size, time_step, feature_dim],
+                A List of shape [batch_size, time_step, feature_dim],
                 representing the missing status of the patients's raw data.
             patient_index: Optional[int].
                 The index of the patient in dataframe.
@@ -144,16 +144,16 @@ class DataAnalyzer:
                 patient_index and patient_id can only choose one.
 
         Returns: Dict.
-            detail: A list of dicts with shape [lab_dim],
+            detail: A List of dicts with shape [lab_dim],
                 name: the name of the feature.
                 value: the value of the feature in all visits.
                 importance: the feature importance value.
                 adaptive: the adaptive feature importance value.
                 missing: the missing status of the feature in all visits.
                 unit: the unit of the feature.
-            time: A list of shape [time_step],
+            time: A List of shape [time_step],
                 representing the date of the patient's visits.
-            time_risk: A list of shape [time_step],
+            time_risk: A List of shape [time_step],
                 representing the risk of the patient at each visit.
         """
         pipeline = DlPipeline(self.config)
@@ -226,9 +226,10 @@ class DataAnalyzer:
         else:
             xid = list(df['PatientID'].drop_duplicates()).index(patient_id)
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        x = torch.cat((x, x), dim=0)
         device = torch.device('cuda:0' if pipeline.on_gpu else 'cpu')
         _, _, feat_attn = pipeline.predict_step(x.to(device))
-        feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, f, f]
+        feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, f]
         mask = mask[xid][time_index]
 
         demo_dim = 2
@@ -270,29 +271,34 @@ class DataAnalyzer:
             target: str = "outcome",
         )-> List:
         """
-        Return data to draw dimension reduction.
+        Return dimension reduced data of the patients.
 
         Args:
             x: List.
-                the input of the patient.
+                A List of shape [batch_size, time_step, feature_dim],
+                representing the input of the patients.
             pid: List.
-                the patient ID.
+                A List of shape [batch_size],
+                representing the patient ID of the patients.
             record_time: List.
-                the record time of the patient.
+                A List of shape [batch_size],
             mean_age: Optional[float].
-                the mean age of the patient.
+                The mean age of the patients.
             std_age: Optional[float].
-                the std age of the patient.
+                The std age of the patients.
             method: str.
-                the method of dimension reduction, one of "PCA" and "TSNE".
+                The method of dimension reduction, one of "PCA" and "TSNE", default is "PCA".
             dimension: int.
-                the dimension of dimension reduction, one of 2 and 3.
+                The dimension of dimension reduction, one of 2 and 3, default is 2.
             target: str.
-                the target of the model, one of "outcome", "los" and "multitask".
+                The target of the model, one of "outcome", "los" and "multitask", default is "outcome".
 
-        Returns:
-            List.
-                the data to draw dimension reduction.        
+        Returns: Dict.
+            detail: A List of dicts with shape [lab_dim],
+                data: the dimension reduced data of the patient.
+                patient_id: the patient ID of the patient.
+                record_time: the visit datetime of the patient.
+                age: the age of the patient.      
         """
         num = len(x)
         patients = []
@@ -321,15 +327,15 @@ class DataAnalyzer:
             else:
                 y_hat = y_hat[:, 1].flatten().tolist()   
             
-            patient = []
+            patient = {}
             if dimension == 2:  # 判断降维维度
-                patient.append({'name': 'data', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]})
+                patient['data'] = [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], y_hat)]
             elif dimension == 3:
-                patient.append({'name': 'data', 'value': [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]})
-            patient.append({'name': 'patient_id', 'value': pidi.item()})
-            patient.append({'name': 'record_time', 'value': [str(x) for x in timei]})
+                patient['data'] = [list(x) for x in zip(reduction_model[:, 0], reduction_model[:, 1], reduction_model[:, 2], y_hat)]
+            patient['patient_id'] = pidi.item()
+            patient['record_time'] = [str(x) for x in timei]
             if std_age is not None and mean_age is not None:
-                patient.append({'name': 'age', 'value': int(xi[0][0][1].item() * std_age + mean_age)})
+                patient['age'] = int(xi[0][0][1].item() * std_age + mean_age)
             patients.append(patient)
         return {'detail': patients}
     
