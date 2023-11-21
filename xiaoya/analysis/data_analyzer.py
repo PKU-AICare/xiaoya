@@ -235,7 +235,7 @@ class DataAnalyzer:
 
         demo_dim = 2
         column_names = list(df.columns[4 + demo_dim:])
-        feature_last_step: List = feat_attn[time_index].sum(dim=0).tolist()
+        feature_last_step: List = feat_attn[time_index].tolist()
         index_dict = {index: value for index, value in enumerate(feature_last_step) if mask[index] != 0}
         max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
         if len(max_indices) > 3:

@@ -163,7 +163,7 @@ class DlPipeline(L.LightningModule):
         ):
         lens = torch.Tensor([len(x[i]) for i in range(x.shape[0])]).to(x.device)
         if self.model_name in ["ConCare"]:
-            y_hat, embedding, feat_attn, decov_loss = self(x, lens)
+            y_hat, embedding, feat_attn, _ = self(x, lens)
             return y_hat, embedding, feat_attn
         elif self.model_name in ["AdaCare"]:
             y_hat, embedding, input_attn = self(x, lens)
