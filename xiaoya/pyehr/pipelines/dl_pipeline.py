@@ -52,17 +52,17 @@ class DlPipeline(L.LightningModule):
     def forward(self, x, lens):
         if self.model_name in ["ConCare"]:
             x_demo, x_lab, mask = x[:, 0, :self.demo_dim], x[:, :, self.demo_dim:], generate_mask(lens)
-            embedding, decov_loss = self.ehr_encoder(x_lab, x_demo, mask)
+            embedding, feat_attn, decov_loss = self.ehr_encoder(x_lab, x_demo, mask)
             embedding, decov_loss = embedding.to(x.device), decov_loss.to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
-            return y_hat, embedding, decov_loss
+            return y_hat, embedding, feat_attn, decov_loss
         elif self.model_name in ["AdaCare"]:
             mask = generate_mask(lens)
-            embedding, inputattn = self.ehr_encoder(x, mask).to(x.device)
+            embedding, input_attn = self.ehr_encoder(x, mask).to(x.device)
             self.embedding = embedding
             y_hat = self.head(embedding)
-            return y_hat, embedding, inputattn
+            return y_hat, embedding, input_attn
         elif self.model_name in ["GRASP", "Agent"]:
             x_demo, x_lab, mask = x[:, 0, :self.demo_dim], x[:, :, self.demo_dim:], generate_mask(lens)
             embedding = self.ehr_encoder(x_lab, x_demo, mask).to(x.device)
@@ -95,12 +95,12 @@ class DlPipeline(L.LightningModule):
 
     def _get_loss(self, x, y, lens):
         if self.model_name in ["ConCare"]:
-            y_hat, embedding, decov_loss = self(x, lens)
+            y_hat, embedding, feat_attn, decov_loss = self(x, lens)
             y_hat, y = unpad_y(y_hat, y, lens)
             loss = get_simple_loss(y_hat, y, self.task)
             loss += 10 * decov_loss
         elif self.model_name in ["AdaCare"]:
-            y_hat, embedding, inputattn = self(x, lens)
+            y_hat, embedding, input_attn = self(x, lens)
             y_hat, y = unpad_y(y_hat, y, lens)
             loss = get_simple_loss(y_hat, y, self.task)
         elif self.model_name in ["MHAGRU"]:
@@ -163,11 +163,11 @@ class DlPipeline(L.LightningModule):
             lens: Optional[torch.Tensor] = None
         ):
         if self.model_name in ["ConCare"]:
-            y_hat, embedding, decov_loss = self(x, x.shape[0])
-            return y_hat, embedding, decov_loss
+            y_hat, embedding, feat_attn, decov_loss = self(x, x.shape[0])
+            return y_hat, embedding, feat_attn
         elif self.model_name in ["AdaCare"]:
-            y_hat, embedding, inputattn = self(x, x.shape[0])
-            return y_hat, embedding, inputattn
+            y_hat, embedding, input_attn = self(x, x.shape[0])
+            return y_hat, embedding, input_attn
         elif self.model_name in ["MHAGRU"]:
             y_hat, embedding, scores = self(x, x.shape[0])
             return y_hat, embedding, scores

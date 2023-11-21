@@ -674,4 +674,4 @@ class ConCare(nn.Module):
             decov_loss += decov
         decov_loss /= time_steps
         out = self.dropout(out)
-        return out, decov_loss
+        return out, feat_attn[:, -1, :, :], decov_loss
