@@ -83,32 +83,39 @@ class DataAnalyzer:
 
         Args:
             df: pd.DataFrame.
-                the dataframe of the patient.
+                A dataframe representing the patients' raw data.
             x: List.
-                the input of the patient.
+                A list of shape [batch_size, time_step, feature_dim],
+                representing the input of the patients.
             patient_index: Optional[int].
-                the index of the patient in dataframe.
+                The index of the patient in dataframe.
             patient_id: Optional[int].
-                the patient ID.
+                The patient ID recorded in dataframe.
+                patient_index and patient_id can only choose one.
 
         Returns:
             Dict.
-                the feature importance.
+                detail: a list of dicts with shape [feature_dim],
+                    name: the name of the feature.
+                    value: the feature importance value.
+                    adaptive: the adaptive feature importance value.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
         xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        x = torch.cat((x, x), dim=0)
         if pipeline.on_gpu:
             x = x.to('cuda:0')
         _, _, feat_attn = pipeline.predict_step(x)
-        feat_attn = feat_attn[0][-1]    # [f, f]
+        feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, f] feature importance value
         column_names = list(df.columns[6:])
         return {
-            'detail': {
-                'name': column_names,
-                'value': feat_attn.detach().cpu().numpy().tolist()  # feature importance value
-            }
+            'detail': [{
+                'name': column_names[i],
+                'value': feat_attn[-1, i],
+                'adaptive': feat_attn[:, i],
+            } for i in range(len(column_names))]
         }
 
     def risk_curve(
