@@ -92,9 +92,13 @@ data_analyzer = DataAnalyzer(pl.config, pl.model_path)
 train_raw = pd.read_csv('datasets/train_raw.csv')
 train_x = pd.read_pickle('datasets/train_x.pkl')
 train_mask = pd.read_pickle('datasets/train_missing_mask.pkl')
+train_mean = pd.read_pickle('datasets/train_mean.pkl')
+train_std = pd.read_pickle('datasets/train_std.pkl')
 result = data_analyzer.risk_curve(
     df=train_raw,
     x=train_x,
+    mean=train_mean,
+    std=train_std,
     mask=train_mask,
     patient_index=0
 )
@@ -114,17 +118,15 @@ pl = Pipeline(model='ConCare')
 pl.execute()
 
 data_analyzer = DataAnalyzer(pl.config, pl.model_path)
+train_raw = pd.read_csv('datasets/train_raw.csv')
 train_x = pd.read_pickle('datasets/train_x.pkl')
-train_pid = pd.read_pickle('datasets/train_pid.pkl')
-train_record_time = pd.read_pickle('datasets/train_record_time.pkl')
 train_mean_age = pd.read_pickle('datasets/train_mean.pkl')['Age']
 train_std_age = pd.read_pickle('datasets/train_std.pkl')['Age']
 result = data_analyzer.data_dimension_reduction(
-    x = train_x,
-    pid = train_pid,
-    record_time = train_record_time,
-    mean_age = train_mean_age,
-    std_age = train_std_age
+    df=train_raw,
+    x=train_x,
+    mean_age=train_mean_age,
+    std_age=train_std_age
 )
 plot_patient_embedding(result['detail'], save_path='./output/')
 ```
@@ -143,8 +145,8 @@ pl.execute()
 data_analyzer = DataAnalyzer(pl.config, pl.model_path)
 train_raw = pd.read_csv('datasets/train_raw.csv')
 train_x = pd.read_pickle('datasets/train_x.pkl')
-train_mask = pd.read_pickle('datasets/train_missing_mask.pkl')
-
+train_mean = pd.read_pickle('datasets/train_mean.pkl')
+train_std = pd.read_pickle('datasets/train_std.pkl')
 result = data_analyzer.ai_advice(
     df=train_raw,
     x=train_x,

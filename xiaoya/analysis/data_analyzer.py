@@ -53,8 +53,8 @@ class DataAnalyzer:
                 patient_index and patient_id can only choose one.
 
         Returns: Dict.
-            detail: a List of shape [time_step, feature_dim],
-            representing the adaptive feature importance of the patient.
+            detail: List.
+                a List of shape [time_step, feature_dim], representing the adaptive feature importance of the patient.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
@@ -93,7 +93,8 @@ class DataAnalyzer:
                 patient_index and patient_id can only choose one.
 
         Returns: Dict.
-            detail: a List of dicts with shape [lab_dim]:
+            detail: List.
+                a List of dicts with shape [lab_dim]:
                 name: the name of the feature.
                 value: the feature importance value.
                 adaptive: the adaptive feature importance value.
@@ -120,7 +121,9 @@ class DataAnalyzer:
             self, 
             df: pd.DataFrame,
             x: List,
-            mask: Optional[List],
+            mean: List,
+            std: List,
+            mask: Optional[List] = None,
             patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
         ) -> Dict:
@@ -167,17 +170,16 @@ class DataAnalyzer:
         if pipeline.on_gpu:
             x = x.to('cuda:0')
         y_hat, _, feat_attn = pipeline.predict_step(x)
-        x = x[0].detach().cpu().numpy()  # [ts, f]
+        x = x[0, :, 2:].detach().cpu().numpy()  # [ts, lab]
         y_hat = y_hat[0].detach().cpu().numpy()  # [ts, 2]
-        feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, f]
-        mask = np.array(mask[xid]) if mask is not None else None  # [ts, f]
+        feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, lab]
+        mask = np.array(mask[xid]) if mask is not None else np.zeros_like(feat_attn)  # [ts, f]
         column_names = list(df.columns[6:])
-        record_times = list(item[1] for item in df[df['PatientID'] == patient_id]['RecordTime'].items()) 
-
+        record_times = list(df[df['PatientID'] == patient_id]['RecordTime'].values) # [ts]
         return {
             'detail': [{
                 'name': column_names[i],
-                'value': x[:, i].tolist(),
+                'value': (x[:, i] * std[column_names[i]] + mean[column_names[i]]).tolist(),
                 'importance': feat_attn[-1, i].tolist(),
                 'adaptive': feat_attn[:, i].tolist(),
                 'missing': mask[:, i].tolist(),
@@ -191,7 +193,8 @@ class DataAnalyzer:
             self,
             df: pd.DataFrame,
             x: List,
-            mask: List,
+            mean: List,
+            std: List,
             time_index: int,
             patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
@@ -231,12 +234,11 @@ class DataAnalyzer:
         device = torch.device('cuda:0' if pipeline.on_gpu else 'cpu')
         _, _, feat_attn = pipeline.predict_step(x.to(device))
         feat_attn = feat_attn[0].detach().cpu().numpy()  # [ts, f]
-        mask = mask[xid][time_index]
 
         demo_dim = 2
         column_names = list(df.columns[4 + demo_dim:])
         feature_last_step: List = feat_attn[time_index].tolist()
-        index_dict = {index: value for index, value in enumerate(feature_last_step) if mask[index] != 0}
+        index_dict = {index: value for index, value in enumerate(feature_last_step)}
         max_indices = sorted(index_dict, key=index_dict.get, reverse=True)
         if len(max_indices) > 3:
             max_indices = max_indices[:3]
@@ -244,8 +246,9 @@ class DataAnalyzer:
         def f(x, args):
             input, i = args
             input[-1][-1][i] = torch.from_numpy(x).float()
+            input = torch.cat((input, input), dim=0)
             y_hat, _, _ = pipeline.predict_step(input.to(device))      # y_hat: [bs, seq_len, 2]
-            return y_hat[0][time_index][0].cpu().detach().numpy()
+            return y_hat[0][time_index][0].cpu().detach().numpy().item()
 
         result = []
         for i in max_indices:
@@ -255,16 +258,15 @@ class DataAnalyzer:
             res = optimize.minimize(f, x0=x0, bounds=(bounds,), args=(args,), method='nelder-mead', options={'disp': True})
             result.append({
                 'name': column_names[i],
-                'old_value': x0,
-                'new_value': float(res.x[0])
+                'old_value': x0  * std[column_names[i]] + mean[column_names[i]],
+                'new_value': res.x[0] * std[column_names[i]] + mean[column_names[i]]
             })
         return {'detail': result}
 
     def data_dimension_reduction(
             self,
+            df: pd.DataFrame,
             x: List,
-            pid: List,
-            record_time: List,
             mean_age: Optional[float],
             std_age: Optional[float],
             method: str = "PCA",
@@ -275,14 +277,11 @@ class DataAnalyzer:
         Return dimension reduced data of the patients.
 
         Args:
+            df: pd.DataFrame.
+                A dataframe representing the patients' raw data.
             x: List.
                 A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
-            pid: List.
-                A List of shape [batch_size],
-                representing the patient ID of the patients.
-            record_time: List.
-                A List of shape [batch_size],
             mean_age: Optional[float].
                 The mean age of the patients.
             std_age: Optional[float].
@@ -303,6 +302,8 @@ class DataAnalyzer:
         """
         num = len(x)
         patients = []
+        pid = df['PatientID'].drop_duplicates().tolist()  # [b]
+        record_time = df.groupby('PatientID')['RecordTime'].apply(list).tolist()  # [b, ts]
         for i in range(num):
             xi = torch.tensor(x[i]).unsqueeze(0)
             pidi = torch.tensor(pid[i]).unsqueeze(0)

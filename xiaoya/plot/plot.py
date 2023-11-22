@@ -91,15 +91,12 @@ def plot_risk_curve(
     detail = data['detail']
     time = data['time']
     risk_index = data['time_risk']
-    importance_dict = {i: detail[i]['importance'] for i in range(len(detail))}
-    importance_dict = sorted(importance_dict.items(), key=lambda x: x[1], reverse=True)
-    index = [item[0] for item in importance_dict[:feature_num]]
 
     x = list(range(len(time)))
     x_label = time
     ys = [risk_index]
     y_labels = ['Risk Index']
-    for i in index:
+    for i in range(feature_num):
         ys.append(detail[i]['value'])
         y_labels.append(detail[i]['name'])
     colors = sns.color_palette("hls", len(ys))
@@ -154,7 +151,7 @@ def plot_patient_embedding(
     plt.figure(figsize=(6, 6))
     for patient in data:   
         if dimension == 2: 
-            df_subset = pd.DataFrame(data=patient[0]['value'], columns=['2d-one', '2d-two', 'target'])
+            df_subset = pd.DataFrame(data=patient['data'], columns=['2d-one', '2d-two', 'target'])
             sns.scatterplot(
                 x='2d-one',
                 y='2d-two',
@@ -165,7 +162,7 @@ def plot_patient_embedding(
                 alpha=0.3,
             )
         elif dimension == 3:
-            df_subset = pd.DataFrame(data=patient[0]['value'], columns=['3d-one', '3d-two', '3d-three', 'target'])
+            df_subset = pd.DataFrame(data=patient['data'], columns=['3d-one', '3d-two', '3d-three', 'target'])
             sns.scatterplot(
                 x='3d-one',
                 y='3d-two',
