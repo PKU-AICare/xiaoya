@@ -478,7 +478,7 @@
   <div class="doc doc-contents first">
 
   
-      <p>DataAnalyzer</p>
+      <p>DataAnalyzer.</p>
 
 
 
@@ -516,7 +516,7 @@ the config of the pipeline.</p>
           <td>
             <div class="doc-md-description">
               <p>str.
-the path of the model.</p>
+the saved path of the model.</p>
             </div>
           </td>
           <td>
@@ -553,7 +553,7 @@ the path of the model.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Return the importance scores of a patient.</p>
+      <p>Return the adaptive feature importance of a patient.</p>
 
 
 
@@ -569,18 +569,65 @@ the path of the model.</p>
     </thead>
     <tbody>
         <tr>
+          <td><code>df</code></td>
+          <td>
+                <code><span title="pandas.DataFrame">DataFrame</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>pd.DataFrame.
+A dataframe representing the patients' raw data.</p>
+            </div>
+          </td>
+          <td>
+              <em>required</em>
+          </td>
+        </tr>
+        <tr>
           <td><code>x</code></td>
           <td>
                 <code><span title="typing.List">List</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>torch.Tensor.
-the input of the patient.</p>
+              <p>List.
+A List of shape [batch_size, time_step, feature_dim],
+representing the input of the patients.</p>
             </div>
           </td>
           <td>
               <em>required</em>
+          </td>
+        </tr>
+        <tr>
+          <td><code>patient_index</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Optional[int].
+The index of the patient in dataframe.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
+          </td>
+        </tr>
+        <tr>
+          <td><code>patient_id</code></td>
+          <td>
+                <code><span title="typing.Optional">Optional</span>[int]</code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>Optional[int].
+The patient ID recorded in dataframe.
+patient_index and patient_id can only choose one.</p>
+            </div>
+          </td>
+          <td>
+                <code>None</code>
           </td>
         </tr>
     </tbody>
@@ -588,23 +635,32 @@ the input of the patient.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><strong>Dict.</strong></p>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
+<td><code>detail</code></td>          <td>
                 <code><span title="typing.Dict">Dict</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dict.
-the importance scores.</p>
+              <p>a List of shape [time_step, feature_dim],</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+<td></td>          <td>
+                <code><span title="typing.Dict">Dict</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>representing the adaptive feature importance of the patient.</p>
             </div>
           </td>
         </tr>
@@ -739,23 +795,25 @@ the time index of the patient.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><strong>Dict.</strong></p>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
+<td><code>detail</code></td>          <td>
                 <code><span title="typing.List">List</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>List.
-the advice of the AI system.</p>
+              <p>A List of dicts with shape [num_advice], default is 3.
+name: the name of the feature.
+old_value: the old value of the feature.
+new_value: the new value of the feature.</p>
             </div>
           </td>
         </tr>
@@ -780,7 +838,7 @@ the advice of the AI system.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Return data to draw dimension reduction.</p>
+      <p>Return dimension reduced data of the patients.</p>
 
 
 
@@ -803,7 +861,8 @@ the advice of the AI system.</p>
           <td>
             <div class="doc-md-description">
               <p>List.
-the input of the patient.</p>
+A List of shape [batch_size, time_step, feature_dim],
+representing the input of the patients.</p>
             </div>
           </td>
           <td>
@@ -818,7 +877,8 @@ the input of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>List.
-the patient ID.</p>
+A List of shape [batch_size],
+representing the patient ID of the patients.</p>
             </div>
           </td>
           <td>
@@ -833,7 +893,7 @@ the patient ID.</p>
           <td>
             <div class="doc-md-description">
               <p>List.
-the record time of the patient.</p>
+A List of shape [batch_size],</p>
             </div>
           </td>
           <td>
@@ -848,7 +908,7 @@ the record time of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>Optional[float].
-the mean age of the patient.</p>
+The mean age of the patients.</p>
             </div>
           </td>
           <td>
@@ -863,7 +923,7 @@ the mean age of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>Optional[float].
-the std age of the patient.</p>
+The std age of the patients.</p>
             </div>
           </td>
           <td>
@@ -878,7 +938,7 @@ the std age of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>str.
-the method of dimension reduction, one of "PCA" and "TSNE".</p>
+The method of dimension reduction, one of "PCA" and "TSNE", default is "PCA".</p>
             </div>
           </td>
           <td>
@@ -893,7 +953,7 @@ the method of dimension reduction, one of "PCA" and "TSNE".</p>
           <td>
             <div class="doc-md-description">
               <p>int.
-the dimension of dimension reduction, one of 2 and 3.</p>
+The dimension of dimension reduction, one of 2 and 3, default is 2.</p>
             </div>
           </td>
           <td>
@@ -908,7 +968,7 @@ the dimension of dimension reduction, one of 2 and 3.</p>
           <td>
             <div class="doc-md-description">
               <p>str.
-the target of the model, one of "outcome", "los" and "multitask".</p>
+The target of the model, one of "outcome", "los" and "multitask", default is "outcome".</p>
             </div>
           </td>
           <td>
@@ -920,23 +980,26 @@ the target of the model, one of "outcome", "los" and "multitask".</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><strong>Dict.</strong></p>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
+<td><code>detail</code></td>          <td>
                 <code><span title="typing.List">List</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>List.
-the data to draw dimension reduction.</p>
+              <p>A List of dicts with shape [lab_dim],
+data: the dimension reduced data of the patient.
+patient_id: the patient ID of the patient.
+record_time: the visit datetime of the patient.
+age: the age of the patient.</p>
             </div>
           </td>
         </tr>
@@ -984,7 +1047,7 @@ the data to draw dimension reduction.</p>
           <td>
             <div class="doc-md-description">
               <p>pd.DataFrame.
-the dataframe of the patient.</p>
+A dataframe representing the patients' raw data.</p>
             </div>
           </td>
           <td>
@@ -999,7 +1062,8 @@ the dataframe of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>List.
-the input of the patient.</p>
+A List of shape [batch_size, time_step, feature_dim],
+representing the input of the patients.</p>
             </div>
           </td>
           <td>
@@ -1014,7 +1078,7 @@ the input of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>Optional[int].
-the index of the patient in dataframe.</p>
+The index of the patient in dataframe.</p>
             </div>
           </td>
           <td>
@@ -1029,7 +1093,8 @@ the index of the patient in dataframe.</p>
           <td>
             <div class="doc-md-description">
               <p>Optional[int].
-the patient ID.</p>
+The patient ID recorded in dataframe.
+patient_index and patient_id can only choose one.</p>
             </div>
           </td>
           <td>
@@ -1041,23 +1106,25 @@ the patient ID.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><strong>Dict.</strong></p>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
+<td><code>detail</code></td>          <td>
                 <code><span title="typing.Dict">Dict</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dict.
-the feature importance.</p>
+              <p>a List of dicts with shape [lab_dim]:
+name: the name of the feature.
+value: the feature importance value.
+adaptive: the adaptive feature importance value.</p>
             </div>
           </td>
         </tr>
@@ -1082,7 +1149,7 @@ the feature importance.</p>
 
   <div class="doc doc-contents ">
   
-      <p>Return data to draw risk curve of a patient.</p>
+      <p>Return risk curve of a patient.</p>
 
 
 
@@ -1105,7 +1172,7 @@ the feature importance.</p>
           <td>
             <div class="doc-md-description">
               <p>pd.DataFrame.
-the dataframe of the patient.</p>
+A dataframe representing the patients' raw data.</p>
             </div>
           </td>
           <td>
@@ -1120,7 +1187,8 @@ the dataframe of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>List.
-the input of the patient.</p>
+A List of shape [batch_size, time_step, feature_dim],
+representing the input of the patients.</p>
             </div>
           </td>
           <td>
@@ -1135,7 +1203,8 @@ the input of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>Optional[List].
-the missing mask of the patient.</p>
+A List of shape [batch_size, time_step, feature_dim],
+representing the missing status of the patients's raw data.</p>
             </div>
           </td>
           <td>
@@ -1150,7 +1219,7 @@ the missing mask of the patient.</p>
           <td>
             <div class="doc-md-description">
               <p>Optional[int].
-the index of the patient in dataframe.</p>
+The index of the patient in dataframe.</p>
             </div>
           </td>
           <td>
@@ -1165,7 +1234,8 @@ the index of the patient in dataframe.</p>
           <td>
             <div class="doc-md-description">
               <p>Optional[int].
-the patient ID.</p>
+The patient ID recorded in dataframe.
+patient_index and patient_id can only choose one.</p>
             </div>
           </td>
           <td>
@@ -1177,23 +1247,50 @@ the patient ID.</p>
 
 
 
-  <p><strong>Returns:</strong></p>
+  <p><strong>Dict.</strong></p>
   <table>
     <thead>
       <tr>
-        <th>Type</th>
+<th>Name</th>        <th>Type</th>
         <th>Description</th>
       </tr>
     </thead>
     <tbody>
         <tr>
-          <td>
+<td><code>detail</code></td>          <td>
                 <code><span title="typing.Dict">Dict</span></code>
           </td>
           <td>
             <div class="doc-md-description">
-              <p>Dict.
-the data to draw risk curve.</p>
+              <p>A List of dicts with shape [lab_dim].
+name: the name of the feature.
+value: the value of the feature in all visits.
+importance: the feature importance value.
+adaptive: the adaptive feature importance value.
+missing: the missing status of the feature in all visits.
+unit: the unit of the feature.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+<td><code>time</code></td>          <td>
+                <code><span title="typing.Dict">Dict</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A List of shape [time_step],
+representing the date of the patient's visits.</p>
+            </div>
+          </td>
+        </tr>
+        <tr>
+<td><code>time_risk</code></td>          <td>
+                <code><span title="typing.Dict">Dict</span></code>
+          </td>
+          <td>
+            <div class="doc-md-description">
+              <p>A List of shape [time_step],
+representing the risk of the patient at each visit.</p>
             </div>
           </td>
         </tr>
