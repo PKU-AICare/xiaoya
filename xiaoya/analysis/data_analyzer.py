@@ -16,7 +16,7 @@ class DataAnalyzer:
     """
     DataAnalyzer.
 
-    Args:
+    Parameters:
         config: Dict.
             the config of the pipeline.
         model_path: str.
@@ -40,19 +40,17 @@ class DataAnalyzer:
         """
         Return the adaptive feature importance of a patient.
 
-        Args:
-            df: pd.DataFrame.
-                A dataframe representing the patients' raw data.
-            x: List.
-                A List of shape [batch_size, time_step, feature_dim],
+        Parameters:
+            df: A dataframe representing the patients' raw data.
+            x: A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
-            patient_index: Optional[int].
+            patient_index: 
                 The index of the patient in dataframe.
-            patient_id: Optional[int].
+            patient_id: 
                 The patient ID recorded in dataframe.
                 patient_index and patient_id can only choose one.
 
-        Returns: Dict.
+        Returns: 
             detail: List.
                 a List of shape [time_step, feature_dim], representing the adaptive feature importance of the patient.
         """
@@ -76,11 +74,11 @@ class DataAnalyzer:
             x: List,
             patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
-        ) -> Dict:
+        ) -> List:
         """
         Return feature importance of a patient.
 
-        Args:
+        Parameters:
             df: pd.DataFrame.
                 A dataframe representing the patients' raw data.
             x: List.
@@ -92,9 +90,8 @@ class DataAnalyzer:
                 The patient ID recorded in dataframe.
                 patient_index and patient_id can only choose one.
 
-        Returns: Dict.
-            detail: List.
-                a List of dicts with shape [lab_dim]:
+        Returns:
+            List: a List of dicts with shape [lab_dim],
                 name: the name of the feature.
                 value: the feature importance value.
                 adaptive: the adaptive feature importance value.
@@ -115,9 +112,7 @@ class DataAnalyzer:
             'value': feat_attn[-1, i].item(),
             'adaptive': feat_attn[:, i].tolist(),
         } for i in range(len(column_names))], key=lambda x: x['value'], reverse=True)
-        return {
-            'detail': detail
-        }
+        return detail # {'detail': detail}
 
     def risk_curve(
             self, 
@@ -128,37 +123,41 @@ class DataAnalyzer:
             mask: Optional[List] = None,
             patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
-        ) -> Dict:
+        ) -> (List, List, List):
         """
         Return risk curve of a patient.
+        
+        We use EMR of patients as the input of the model `Concare`,
+        and calculate the risk of the patient at each visit,
+        also with feature importance of the patient at each visit.
 
-        Args:
-            df: pd.DataFrame.
+        Parameters:
+            df:
                 A dataframe representing the patients' raw data.
-            x: List.
+            x:
                 A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
-            mask: Optional[List].
+            mask:
                 A List of shape [batch_size, time_step, feature_dim],
                 representing the missing status of the patients's raw data.
-            patient_index: Optional[int].
+            patient_index:
                 The index of the patient in dataframe.
-            patient_id: Optional[int].
+            patient_id:
                 The patient ID recorded in dataframe.
                 patient_index and patient_id can only choose one.
 
-        Returns: Dict.
-            detail: A List of dicts with shape [lab_dim].
+        Returns: 
+            List: A List of dicts with shape [lab_dim],
                 name: the name of the feature.
                 value: the value of the feature in all visits.
                 importance: the feature importance value.
                 adaptive: the adaptive feature importance value.
                 missing: the missing status of the feature in all visits.
                 unit: the unit of the feature.
-            time: A List of shape [time_step],
+            List: A List of shape [time_step],
                 representing the date of the patient's visits.
-            time_risk: A List of shape [time_step],
-                representing the risk of the patient at each visit.
+            List: A List of shape [time_step],
+                representing the death risk of the patient at each visit.
         """
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
@@ -187,11 +186,12 @@ class DataAnalyzer:
             'missing': mask[:, i].tolist(),
             'unit': ''
         } for i in range(len(column_names))], key=lambda x: x['importance'], reverse=True)
-        return {
-            'detail': detail,
-            'time': record_times,   # ts
-            'time_risk': y_hat[:, 0],  # ts
-        }
+        return detail, record_times, y_hat[:, 0]
+        # {
+        #     'detail': detail,
+        #     'time': record_times,   # ts
+        #     'time_risk': y_hat[:, 0],  # ts
+        # }
     
     def ai_advice(
             self,
@@ -199,29 +199,34 @@ class DataAnalyzer:
             x: List,
             mean: Dict,
             std: Dict,
-            time_index: int,
+            time_index: int = -1,
             patient_index: Optional[int] = None,
             patient_id: Optional[int] = None,
         ) -> List:
         """
         Return the advice of the AI system.
 
-        Args:
-            df: pd.DataFrame.
-                the dataframe of the patient.
-            x: List.
-                the input of the patient.
-            mask: Optional[List].
-                the missing mask of the patient.
-            patient_index: Optional[int].
-                the index of the patient in dataframe.
-            patient_id: Optional[int].
-                the patient ID.
-            time_index: int.
-                the time index of the patient.
+        Parameters:
+            df:
+                A dataframe representing the patients' raw data.
+            x: 
+                A List of shape [batch_size, time_step, feature_dim],
+                representing the input of the patients.
+            mean:
+                A Dict with keys of feature names and mean values of all features.
+            std:
+                A Dict with keys of feature names and std values of all features.
+            patient_index:
+                The index of the patient in dataframe.
+            patient_id:
+                The patient ID recorded in dataframe.
+                patient_index and patient_id can only choose one.
+            time_index:
+                The index of the visit of the patient, default is -1.
 
-        Returns: Dict.
-            detail: A List of dicts with shape [num_advice], default is 3.
+        Returns:
+            List: A List of dicts with shape [num_advice], default `num_advice` is 3,
+                representing the advice of the AI system.
                 name: the name of the feature.
                 old_value: the old value of the feature.
                 new_value: the new value of the feature.
@@ -265,7 +270,7 @@ class DataAnalyzer:
                 'old_value': x0  * std[column_names[i]] + mean[column_names[i]],
                 'new_value': res.x[0] * std[column_names[i]] + mean[column_names[i]]
             })
-        return {'detail': result}
+        return result # {'detail': result}
 
     def data_dimension_reduction(
             self,
@@ -280,25 +285,25 @@ class DataAnalyzer:
         """
         Return dimension reduced data of the patients.
 
-        Args:
-            df: pd.DataFrame.
+        Parameters:
+            df:
                 A dataframe representing the patients' raw data.
-            x: List.
+            x:
                 A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
-            mean_age: Optional[float].
+            mean_age:
                 The mean age of the patients.
-            std_age: Optional[float].
+            std_age:
                 The std age of the patients.
-            method: str.
+            method:
                 The method of dimension reduction, one of "PCA" and "TSNE", default is "PCA".
-            dimension: int.
+            dimension:
                 The dimension of dimension reduction, one of 2 and 3, default is 2.
-            target: str.
+            target:
                 The target of the model, one of "outcome", "los" and "multitask", default is "outcome".
 
-        Returns: Dict.
-            detail: A List of dicts with shape [lab_dim],
+        Returns:
+            List: A List of dicts with shape [lab_dim],
                 data: the dimension reduced data of the patient.
                 patient_id: the patient ID of the patient.
                 record_time: the visit datetime of the patient.
@@ -343,7 +348,7 @@ class DataAnalyzer:
             if std_age is not None and mean_age is not None:
                 patient['age'] = int(xi[0][0][1].item() * std_age + mean_age)
             patients.append(patient)
-        return {'detail': patients}
+        return patients # {'detail': patients}
     
     def similar_patients(
             self,
@@ -357,9 +362,41 @@ class DataAnalyzer:
             patient_id: Optional[int] = None,
             n_clu: int = 10,
             topk: int = 6,
-        ):
+        ) -> List:
         """
         Return similar patients information.
+        
+        Parameters:
+            x_df:
+                A dataframe representing the patients' raw data.
+            x:
+                A List of shape [batch_size, time_step, feature_dim],
+                representing the input of the patients.
+            p_df:
+                A dataframe representing the similar patients' raw data.
+            patients:
+                A List of shape [batch_size, time_step, feature_dim],
+                representing the input of the similar patients.
+            mean:
+                A Dict with keys of feature names and mean values of all features.
+            std:
+                A Dict with keys of feature names and std values of all features.
+            patient_index:
+                The index of the patient in dataframe.
+            patient_id:
+                The patient ID recorded in dataframe.
+                patient_index and patient_id can only choose one.
+            n_clu:
+                The number of clusters, default is 10.
+            topk:
+                The number of similar patients, default is 6.
+                
+        Returns:
+            detail: A List of dicts with shape [topk],
+                pid: the patient ID of the similar patient.
+                context: the context of the similar patient.
+                distance: the distance between the patient and the similar patient.
+                similarity: the similarity between the patient and the similar patient.
         """
         
         pipeline = DlPipeline(self.config)
@@ -395,6 +432,7 @@ class DataAnalyzer:
         for x in detail:
             x['similarity'] = (x['distance'] - minDist) / (maxDist - minDist)
         
-        return {
-            'detail': detail[:topk]
-        }
+        return detail[:topk] 
+        # {
+        #     'detail': detail[:topk]
+        # }

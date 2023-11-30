@@ -73,7 +73,7 @@ result = data_analyzer.feature_importance(
     x=train_x,
     patient_index=0
 )
-plot_feature_importance(result['detail'], save_path='./output/')
+plot_feature_importance(result, save_path='./output/')
 ```
 
 * Plot Patient Risk curve
@@ -85,7 +85,7 @@ from xiaoya.pipeline import Pipeline
 from xiaoya.analysis import DataAnalyzer
 from xiaoya.plot import plot_risk_curve
 
-pl = Pipeline(model='AdaCare')
+pl = Pipeline(model='ConCare')
 pl.execute()
 
 data_analyzer = DataAnalyzer(pl.config, pl.model_path)
@@ -94,7 +94,7 @@ train_x = pd.read_pickle('datasets/train_x.pkl')
 train_mask = pd.read_pickle('datasets/train_missing_mask.pkl')
 train_mean = pd.read_pickle('datasets/train_mean.pkl')
 train_std = pd.read_pickle('datasets/train_std.pkl')
-result = data_analyzer.risk_curve(
+result, time, time_risk = data_analyzer.risk_curve(
     df=train_raw,
     x=train_x,
     mean=train_mean,
@@ -102,7 +102,7 @@ result = data_analyzer.risk_curve(
     mask=train_mask,
     patient_index=0
 )
-plot_risk_curve(result, save_path='./output/')
+plot_risk_curve(result, time, time_risk, save_path='./output/')
 ```
 
 * Plot Patient Embedding and Trajectory
@@ -128,7 +128,7 @@ result = data_analyzer.data_dimension_reduction(
     mean_age=train_mean_age,
     std_age=train_std_age
 )
-plot_patient_embedding(result['detail'], save_path='./output/')
+plot_patient_embedding(result, save_path='./output/')
 ```
 
 * AI Advice

@@ -69,7 +69,9 @@ def plot_feature_importance(
 
 
 def plot_risk_curve(
-        data: Dict,
+        data: List,
+        time: List,
+        time_risk: List,
         save_path: str,
         feature_num: int=3,
         file_name: str='risk_curve',
@@ -88,17 +90,13 @@ def plot_risk_curve(
             File name of the plot.
     """
 
-    detail = data['detail']
-    time = data['time']
-    risk_index = data['time_risk']
-
     x = list(range(len(time)))
     x_label = time
-    ys = [risk_index]
+    ys = [time_risk]
     y_labels = ['Risk Index']
     for i in range(feature_num):
-        ys.append(detail[i]['value'])
-        y_labels.append(detail[i]['name'])
+        ys.append(data[i]['value'])
+        y_labels.append(data[i]['name'])
     colors = sns.color_palette("hls", len(ys))
 
     fig, ax = plt.subplots(figsize=(10, 6))
