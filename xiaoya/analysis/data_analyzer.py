@@ -9,6 +9,7 @@ from scipy import optimize
 from sklearn.cluster import KMeans
 
 from xiaoya.pyehr.pipelines import DlPipeline
+from xiaoya.pyehr.dataloaders.utils import unpad_batch
 from xiaoya.pipeline import Pipeline
 
 
@@ -439,9 +440,45 @@ class DataAnalyzer:
             self,
             df: pd.DataFrame,
             x: List,
+            feature: str,
+            mean: Dict,
+            std: Dict,
         ):
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
-        x = torch.Tensor(x).unsqueeze(0)   # [bs, ts, f]
+        labtest_feature_index = df.columns[6:].tolist().index(feature)
+        lens = [len(item) for item in x]
+        
+        x = [torch.Tensor(item) for item in x]
+        x = torch.nn.utils.rnn.pad_sequence(x, batch_first=True, padding_value=0) 
         if pipeline.on_gpu:
             x = x.to('cuda:0')
+        y_hat, _, feat_attn = pipeline.predict_step(x)
+        x = x[:, :, 2 + labtest_feature_index].unsqueeze(-1)
+        y_hat = y_hat[:, :, 0].unsqueeze(-1)
+        feat_attn = feat_attn[:, :, labtest_feature_index].unsqueeze(-1)
+        
+        _, y = unpad_batch(x, y_hat, torch.Tensor(lens))
+        x, feat_attn = unpad_batch(x, feat_attn, torch.Tensor(lens))
+        data = pd.DataFrame(data={
+            'Value': x * std[feature] + mean[feature],
+            'Attention': feat_attn,
+            'Outcome': y,
+        })
+        # 2D data
+        
+        # 3D data
+        outcome_bins = [0, 0.2, 0.4, 0.6, 0.8, 1.0]
+        attn_bins = list(np.arange(0.0, 101.0, 1.0))
+        max_value = data['Value'].max()
+        min_value = data['Value'].min()
+        value_bins = list(map(lambda x: round(x, 1), np.arange(min_value, max_value, (max_value - min_value) / 51)))
+        
+        data_3D = []
+        for _, by_outcome in data.groupby(pd.cut(data['Outcome'], bins=outcome_bins), observed=False):
+            data_3D_outcome = []
+            for i, by_value in enumerate(by_outcome.groupby(pd.cut(by_outcome['Value'], bins=value_bins), observed=False)):
+                for j, by_attn in enumerate(by_value[1].groupby(pd.cut(by_value[1]['Attention'], bins=attn_bins), observed=False)):
+                    data_3D_outcome.append([value_bins[i + 1], attn_bins[j + 1], len(by_attn[1])])
+            data_3D.append(data_3D_outcome)
+        return data_3D
