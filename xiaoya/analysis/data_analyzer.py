@@ -58,15 +58,13 @@ class DataAnalyzer:
         pipeline = pipeline.load_from_checkpoint(self.model_path)
         xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
+        x = torch.cat((x, x), dim=0)
         if pipeline.on_gpu:
             x = x.to('cuda:0')
-        _, _, input_attn = pipeline.predict_step(x)
-        input_attn = input_attn[0]
-
-        rerult = {
-            'detail': input_attn.detach().cpu().numpy().tolist() # [ts, f]
-        }
-        return rerult
+        _, _, feat_attn = pipeline.predict_step(x)
+        feat_attn = feat_attn[0]
+            
+        return feat_attn.detach().cpu().numpy().tolist() # [ts, f]
     
     def feature_importance(
             self,
@@ -392,7 +390,7 @@ class DataAnalyzer:
                 The number of similar patients, default is 6.
                 
         Returns:
-            detail: A List of dicts with shape [topk],
+            List: A List of dicts with shape [topk],
                 pid: the patient ID of the similar patient.
                 context: the context of the similar patient.
                 distance: the distance between the patient and the similar patient.
@@ -436,3 +434,14 @@ class DataAnalyzer:
         # {
         #     'detail': detail[:topk]
         # }
+        
+    def analyze_dataset(
+            self,
+            df: pd.DataFrame,
+            x: List,
+        ):
+        pipeline = DlPipeline(self.config)
+        pipeline = pipeline.load_from_checkpoint(self.model_path)
+        x = torch.Tensor(x).unsqueeze(0)   # [bs, ts, f]
+        if pipeline.on_gpu:
+            x = x.to('cuda:0')
