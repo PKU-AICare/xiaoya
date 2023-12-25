@@ -462,7 +462,7 @@ class DataAnalyzer:
         x, feat_attn = unpad_batch(x, feat_attn, torch.Tensor(lens))
         data = pd.DataFrame(data={
             'Value': x * std[feature] + mean[feature],
-            'Attention': feat_attn,
+            'Attention': feat_attn * 100.0,
             'Outcome': y,
         })
         # 2D data
@@ -474,11 +474,18 @@ class DataAnalyzer:
         min_value = data['Value'].min()
         value_bins = list(map(lambda x: round(x, 1), np.arange(min_value, max_value, (max_value - min_value) / 51)))
         
+        data_bar_2D = []
+        data_line_2D = []
         data_3D = []
         for _, by_outcome in data.groupby(pd.cut(data['Outcome'], bins=outcome_bins), observed=False):
+            data_2D_outcome = []
             data_3D_outcome = []
             for i, by_value in enumerate(by_outcome.groupby(pd.cut(by_outcome['Value'], bins=value_bins), observed=False)):
+                data_2D_outcome.append([value_bins[i + 1], len(by_value[1])])
                 for j, by_attn in enumerate(by_value[1].groupby(pd.cut(by_value[1]['Attention'], bins=attn_bins), observed=False)):
                     data_3D_outcome.append([value_bins[i + 1], attn_bins[j + 1], len(by_attn[1])])
+            data_bar_2D.append(data_2D_outcome)
             data_3D.append(data_3D_outcome)
-        return data_3D
+        for _, by_value in data.groupby(pd.cut(data['Value'], bins=value_bins), observed=False):
+            data_line_2D.append([value_bins[i + 1], by_value[1]['Attention'].mean()])
+        return data_bar_2D, data_line_2D, data_3D
