@@ -351,10 +351,8 @@ class DataAnalyzer:
     
     def similar_patients(
             self,
-            x_df: pd.DataFrame,
+            df: pd.DataFrame,
             x: List,
-            p_df: pd.DataFrame,
-            patients: List,
             mean: Dict,
             std: Dict,
             patient_index: Optional[int] = None,
@@ -366,16 +364,11 @@ class DataAnalyzer:
         Return similar patients information.
         
         Parameters:
-            x_df:
+            df:
                 A dataframe representing the patients' raw data.
             x:
                 A List of shape [batch_size, time_step, feature_dim],
                 representing the input of the patients.
-            p_df:
-                A dataframe representing the similar patients' raw data.
-            patients:
-                A List of shape [batch_size, time_step, feature_dim],
-                representing the input of the similar patients.
             mean:
                 A Dict with keys of feature names and mean values of all features.
             std:
@@ -400,10 +393,10 @@ class DataAnalyzer:
         
         pipeline = DlPipeline(self.config)
         pipeline = pipeline.load_from_checkpoint(self.model_path)
-        xid = patient_index if patient_index is not None else list(x_df['PatientID'].drop_duplicates()).index(patient_id)        
+        xid = patient_index if patient_index is not None else list(df['PatientID'].drop_duplicates()).index(patient_id)        
         x = torch.Tensor(x[xid]).unsqueeze(0)   # [1, ts, f]
-        x = torch.cat([x, x], dim=0)    
-        patients = [torch.Tensor(patient) for patient in patients]       # [b, ts, f]
+        x = torch.cat([x, x], dim=0)
+        patients = [torch.Tensor(patient) for patient in x]       # [b, ts, f]
         patients = torch.nn.utils.rnn.pad_sequence(patients, batch_first=True, padding_value=0)
         if pipeline.on_gpu:
             x = x.to('cuda:0')
@@ -416,7 +409,7 @@ class DataAnalyzer:
         cluster = KMeans(n_clusters=n_clu).fit(patients_context)
         center_id = cluster.predict(x_context.reshape(1, -1))
         similar_patients_index = (cluster.labels_ == center_id)
-        similar_patients_id = p_df['PatientID'].drop_duplicates()[similar_patients_index].tolist()
+        similar_patients_id = df['PatientID'].drop_duplicates()[similar_patients_index].tolist()
         similar_patients_x = patients[similar_patients_index]
         similar_patients_context = patients_context[similar_patients_index]
         
