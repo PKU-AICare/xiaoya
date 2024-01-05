@@ -88,9 +88,9 @@ class DataHandler:
         Returns:
             pd.DataFrame: The merged Dataframe.
         """
-        labtest_standard_df: pd.DataFrame = self.standard_df['labtest'] 
-        events_standard_df: pd.DataFrame = self.standard_df['events']
-        target_standard_df: pd.DataFrame = self.standard_df['target']
+        labtest_standard_df: pd.DataFrame = self.standard_df.get('labtest', None)
+        events_standard_df: pd.DataFrame = self.standard_df.get('events', None)
+        target_standard_df: pd.DataFrame = self.standard_df.get('target', None)
 
         assert labtest_standard_df is not None and events_standard_df is not None and target_standard_df is not None, \
         "Please format all dataframes first."
